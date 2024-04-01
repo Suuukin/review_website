@@ -12,18 +12,26 @@ def get_db_connection():
     return conn
 
 
-def get_post(post_id):
+def get_post(post_id, store):
     conn = get_db_connection()
-    post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+    if store == "steam":
+        post = conn.execute(
+            "SELECT * FROM posts WHERE appid = ? AND store = ?", (post_id, store)
+        ).fetchone()
+    else:
+        post = conn.execute(
+            "SELECT * FROM posts WHERE id = ? AND store = ?", (post_id, store)
+        ).fetchone()
     conn.close()
+    print(store, post_id)
     if post is None:
         abort(404)
     return post
 
 
-@app.route("/<int:post_id>")
-def post(post_id):
-    post = get_post(post_id)
+@app.route("/<string:store>/<int:post_id>")
+def post(post_id, store):
+    post = get_post(post_id, store)
     return render_template("post.html", post=post)
 
 
@@ -32,6 +40,7 @@ def index():
     conn = get_db_connection()
     posts = conn.execute("SELECT * FROM posts").fetchall()
     conn.close()
+
     return render_template("index.html", posts=posts)
 
 
@@ -85,5 +94,5 @@ def delete(id):
     conn.execute("DELETE FROM posts WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    flash('"{}" was successfully deleted!'.format(post['title']))
-    return redirect(url_for('index'))
+    flash('"{}" was successfully deleted!'.format(post["title"]))
+    return redirect(url_for("index"))
