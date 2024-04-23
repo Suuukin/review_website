@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>{% block title %} Welcome to FlaskBlog {% endblock %}</h1>
+    <h1>{% block title %} placeholder {% endblock %}</h1>
     {% for post in posts %}
         {% if post["store"] == "steam" %}
             {% set id = post["appid"] %}
@@ -12,7 +12,7 @@
             <h2>{{ post['title'] }}</h2>
         </a>
         <span class="badge badge-primary">{{ post['created'] }}</span>
-        <a href="{{ url_for('edit', id=post['id']) }}">
+        <a href="{{ url_for('edit', id=post['id'], store=post['store']) }}">
             <span class="badge badge-warning">Edit</span>
         </a>
         <hr>

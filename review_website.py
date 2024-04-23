@@ -32,7 +32,11 @@ def get_post(post_id, store):
 @app.route("/<string:store>/<int:post_id>")
 def post(post_id, store):
     post = get_post(post_id, store)
-    return render_template("post.html", post=post)
+    if post["store"] == "steam":
+        store_url = f"https://steampowered.com/app/{post['appid']}"
+    else:
+        store_url = None
+    return render_template("post.html", post=post, store_url=store_url)
 
 
 @app.route("/")
@@ -64,9 +68,9 @@ def create():
     return render_template("create.html")
 
 
-@app.route("/<int:id>/edit", methods=("GET", "POST"))
-def edit(id):
-    post = get_post(id)
+@app.route("/<string:store>/<int:id>/edit", methods=("GET", "POST"))
+def edit(store, id):
+    post = get_post(id, store)
 
     if request.method == "POST":
         title = request.form["title"]
@@ -87,9 +91,9 @@ def edit(id):
     return render_template("edit.html", post=post)
 
 
-@app.route("/<int:id>/delete", methods=("POST",))
-def delete(id):
-    post = get_post(id)
+@app.route("/<string:store>/<int:id>/delete", methods=("POST",))
+def delete(store, id):
+    post = get_post(id, store)
     conn = get_db_connection()
     conn.execute("DELETE FROM posts WHERE id = ?", (id,))
     conn.commit()

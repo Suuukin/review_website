@@ -1,6 +1,9 @@
-h1 {
-    border: 2px #eee solid;
-    color: brown;
-    text-align: center;
-    padding: 10px;
+p {
+    max-width: 45em;
+    font-size: 24px;
+}
+
+.store_img {
+    height: 48px;
+    width: 48px;
 }
