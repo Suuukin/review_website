@@ -10,17 +10,17 @@ def get_db_connection():
 
 def main():
     with open("reviews.yaml") as fp:
-        data = yaml.load(fp, Loader=yaml.Loader)
+        review_data = yaml.load(fp, Loader=yaml.Loader)
 
     conn = get_db_connection()
-    for item in data:
+    for item in review_data:
         title = item["title"]
         content = item["content"]
-        appid = item["appid"]
+        app_id = item["app_id"]
         store = item["store"]
         conn.execute(
-            "INSERT INTO posts (title, content, appid, store) VALUES (?, ?, ?, ?)",
-            (title, content, appid, store),
+            "INSERT INTO posts (title, content, app_id, store) VALUES (?, ?, ?, ?)",
+            (title, content, app_id, store),
         )
     conn.commit()
     conn.close()

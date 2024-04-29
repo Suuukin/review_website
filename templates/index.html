@@ -1,20 +1,37 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>{% block title %} placeholder {% endblock %}</h1>
-    {% for post in posts %}
-        {% if post["store"] == "steam" %}
-            {% set id = post["appid"] %}
-        {% else %}
-            {% set id = post["id"] %}
-        {% endif %}
-        <a href=" {{url_for('post', post_id=id, store=post['store'])}}">
-            <h2>{{ post['title'] }}</h2>
-        </a>
-        <span class="badge badge-primary">{{ post['created'] }}</span>
-        <a href="{{ url_for('edit', id=post['id'], store=post['store']) }}">
-            <span class="badge badge-warning">Edit</span>
-        </a>
-        <hr>
+<h1>{% block title%} Reviews {% endblock %}</h1>
+{% for post in posts %}
+{% if post["store"] == "steam" %}
+{% set id = post["app_id"] %}
+{% set image = post["extra"]["capsule_image"] %}
+{% set genres = post["genres"] %}
+{% else %}
+{% set id = post["id"] %}
+{% set image = None %}
+{% set genres = None %}
+{% endif %}
+
+
+<div>
+    <a href=" {{url_for('post', post_id=id, store=post['store'])}}">
+        <img src="{{image}}" alt="Game Image">
+    </a>
+    <a href=" {{url_for('post', post_id=id, store=post['store'])}}">
+        <h2 style="display: inline-block">{{ post['title'] }}</h2>
+    </a>
+</div>
+{% if genres != None %}
+{% for description in genres %}
+<span class="badge badge-secondary">{{description}}</span>
+{% endfor %}
+{% endif %}
+<span class="edit badge badge-primary float-end">{{ post['created'] }}</span>
+<span></span>
+<a href="{{ url_for('edit', id=post['id'], store=post['store']) }}">
+    <span class="badge badge-warning float-end">Edit</span>
+</a>
+<hr>
 {% endfor %}
 {% endblock %}

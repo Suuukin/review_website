@@ -3,7 +3,41 @@ p {
     font-size: 24px;
 }
 
-.store_img {
+a:link {
+    text-decoration: none;
+}
+
+a:visited {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+a:active {
+    text-decoration: none;
+}
+
+.store_image {
     height: 48px;
     width: 48px;
+}
+
+.capsule_image {
+    height: 215px;
+    width: 460px;
+}
+
+.left_panel{
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.right_panel{
+    height: 100%;
+    width: 100%;
+    float: right;
+    overflow: auto 
 }

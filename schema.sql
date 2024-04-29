@@ -5,6 +5,17 @@ CREATE TABLE posts (
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
-    appid INTEGER,
+    app_id INTEGER,
     store TEXT DEFAULT "other"
+);
+
+DROP TABLE IF EXISTS app_info;
+
+CREATE TABLE app_info (
+    app_id INTEGER PRIMARY KEY,
+    detailed_description Text,
+    header_image TEXT,
+    genres TEXT,
+    background TEXT,
+    extra TEXT
 );
