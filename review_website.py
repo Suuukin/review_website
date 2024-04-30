@@ -43,11 +43,14 @@ def post(post_id, store):
         store_url = f"https://steampowered.com/app/{post['app_id']}"
         steam_image = app_info["header_image"]
         bg_img = app_info["background"]
-        app_info_extra = json.loads(app_info["extra"])
-        #desc = app_info_extra["short_description"]
         desc = app_info["detailed_description"]
         return render_template(
-            "steam_post.html", post=post, store_url=store_url, image=steam_image, bg_img = bg_img, desc = desc
+            "steam_post.html",
+            post=post,
+            store_url=store_url,
+            image=steam_image,
+            bg_img=bg_img,
+            desc=desc,
         )
     else:
         store_url = None
@@ -58,18 +61,24 @@ def post(post_id, store):
 def index():
     conn = get_db_connection()
     post_sql = conn.execute(
-        "SELECT posts.*, app_info.extra FROM posts JOIN app_info ON posts.app_id=app_info.app_id"
+        "SELECT posts.*, app_info.extra FROM posts LEFT JOIN app_info ON posts.app_id=app_info.app_id"
     ).fetchall()
     conn.close()
 
     posts = []
     for row in post_sql:
         post = dict((k, row[k]) for k in row.keys())
-        post["extra"] = json.loads(post["extra"])
-        post["genres"] = [g["description"] for g in post["extra"].get("genres", [])]
+        if row["extra"]:
+            post["extra"] = json.loads(post["extra"])
+            post["genres"] = [g["description"] for g in post["extra"].get("genres", [])]
         posts.append(post)
 
     return render_template("index.html", posts=posts)
+
+
+@app.route("/about")
+def about_page():
+    return render_template("about.html")
 
 
 @app.route("/create", methods=("GET", "POST"))
@@ -81,6 +90,7 @@ def create():
         if not title:
             flash("Title is required")
         else:
+            print("create post")
             conn = get_db_connection()
             conn.execute(
                 "INSERT INTO posts (title, content) VALUES (?, ?)", (title, content)
@@ -104,10 +114,16 @@ def edit(store, id):
             flash("Title is required!")
         else:
             conn = get_db_connection()
-            conn.execute(
-                "UPDATE posts SET title = ?, content = ?" " WHERE id = ?",
-                (title, content, id),
-            )
+            if post["store"] == "steam":
+                conn.execute(
+                    "UPDATE posts SET title = ?, content = ?" " WHERE app_id = ?",
+                    (title, content, id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE posts SET title = ?, content = ?" " WHERE id = ?",
+                    (title, content, id),
+                )
             conn.commit()
             conn.close()
             return redirect(url_for("index"))

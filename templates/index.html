@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>{% block title%} Reviews {% endblock %}</h1>
+<h1>Reviews</h1>
 {% for post in posts %}
 {% if post["store"] == "steam" %}
 {% set id = post["app_id"] %}
@@ -29,7 +29,7 @@
 {% endif %}
 <span class="edit badge badge-primary float-end">{{ post['created'] }}</span>
 <span></span>
-<a href="{{ url_for('edit', id=post['id'], store=post['store']) }}">
+<a href="{{ url_for('edit', id=id, store=post['store']) }}">
     <span class="badge badge-warning float-end">Edit</span>
 </a>
 <hr>
