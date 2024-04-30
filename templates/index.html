@@ -19,7 +19,7 @@
         <img src="{{image}}" alt="Game Image">
     </a>
     <a href=" {{url_for('post', post_id=id, store=post['store'])}}">
-        <h2 style="display: inline-block">{{ post['title'] }}</h2>
+        <h2 class="p-2" style="display: inline-block">{{ post['title'] }}</h2>
     </a>
 </div>
 {% if genres != None %}

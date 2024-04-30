@@ -43,8 +43,11 @@ def post(post_id, store):
         store_url = f"https://steampowered.com/app/{post['app_id']}"
         steam_image = app_info["header_image"]
         bg_img = app_info["background"]
+        app_info_extra = json.loads(app_info["extra"])
+        #desc = app_info_extra["short_description"]
+        desc = app_info["detailed_description"]
         return render_template(
-            "steam_post.html", post=post, store_url=store_url, image=steam_image, bg_img = bg_img
+            "steam_post.html", post=post, store_url=store_url, image=steam_image, bg_img = bg_img, desc = desc
         )
     else:
         store_url = None

@@ -29,15 +29,34 @@ a:active {
     width: 460px;
 }
 
-.left_panel{
+.left_panel {
     height: 100%;
     width: 100%;
-    object-fit: cover;
+    background-position-x: left;
+    background-position-y: top;
+    background-repeat: no-repeat;
 }
 
-.right_panel{
+.right_panel {
     height: 100%;
     width: 100%;
-    float: right;
-    overflow: auto 
+    background-position-x: right;
+    background-position-y: top;
+    background-repeat: no-repeat;
+    background-color: #1b2838;
+}
+
+.fullscreen {
+    height: 90%;
+}
+
+.steam_blue {
+    background-color: #1b2838;
+}
+
+.steam_description img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
 }

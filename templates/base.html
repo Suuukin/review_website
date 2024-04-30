@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="dark" class="h-100">
 
 <head>
   <!-- Required meta tags -->
@@ -12,7 +12,7 @@
   <title>{% block title %} {% endblock %}</title>
 </head>
 
-<body>
+<body class="h-100">
   <div class="bg-secondary-subtle text-primary-emphasis">
     <nav class="navbar navbar-expand-md p-3">
       <a class="navbar-brand" href="{{ url_for('index')}}">Suukin's Selection</a>
@@ -33,20 +33,20 @@
     </nav>
   </div>
 
-  <div class="container_fluid h-100">
-    <div class="row">
-      <div class="col">
+  <div class="container_fluid fullscreen bg-dark">
+    <div class="row h-100 m-0">
+      <div class="col p-0 steam_blue">
         {% block left_panel %} {% endblock %}
       </div>
       <div class="col-8">
-        <div class="container">
+        <div class="container bg-dark">
           {% for message in get_flashed_messages() %}
           <div class="alert alert-danger">{{ message }}</div>
           {% endfor %}
           {% block content %} {% endblock %}
         </div>
       </div>
-      <div class="col">
+      <div class="col p-0 steam_blue">
         {% block right_panel %} {% endblock %}
       </div>
     </div>
