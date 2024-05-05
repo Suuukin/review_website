@@ -4,9 +4,9 @@
     <div>
         <h2>{% block title %} {{ post['title'] }} {% endblock %}</h2>
         {% if post["store"] == "steam" %}
-        <a href="{{store_url}}"><img class="store_image" src="/static/images/steam_logo.svg" alt="Steam Store Link"></a>
+        <a href="{{store_url}}"><img class="store_image" src="/game-reviews/static/images/steam_logo.svg" alt="Steam Store Link"></a>
         {% else %}
-        <img class="store_image" src="/static/images/store.svg" alt="Store Link">
+        <img class="store_image" src="/game-reviews/static/images/store.svg" alt="Store Link">
         {% endif %}
         <span class="badge badge-primary">{{ post['created'] }}</span>
         <p>{{ post['content'] }}</p>
