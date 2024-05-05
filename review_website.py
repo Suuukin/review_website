@@ -17,7 +17,8 @@ def get_post(post_id, store):
     conn = get_db_connection()
     if store == "steam":
         post = conn.execute(
-            "SELECT * FROM posts WHERE app_id = ? AND store = ?", (post_id, store)
+            "SELECT * FROM posts WHERE app_id = ? AND store = ?",
+            (post_id, store),
         ).fetchone()
         app_info = conn.execute(
             "SELECT * FROM app_info WHERE app_id = ?", (post_id,)
@@ -70,7 +71,9 @@ def index():
         post = dict((k, row[k]) for k in row.keys())
         if row["extra"]:
             post["extra"] = json.loads(post["extra"])
-            post["genres"] = [g["description"] for g in post["extra"].get("genres", [])]
+            post["genres"] = [
+                g["description"] for g in post["extra"].get("genres", [])
+            ]
         posts.append(post)
 
     return render_template("index.html", posts=posts)
@@ -93,7 +96,8 @@ def create():
             print("create post")
             conn = get_db_connection()
             conn.execute(
-                "INSERT INTO posts (title, content) VALUES (?, ?)", (title, content)
+                "INSERT INTO posts (title, content) VALUES (?, ?)",
+                (title, content),
             )
             conn.commit()
             conn.close()
@@ -116,7 +120,8 @@ def edit(store, id):
             conn = get_db_connection()
             if post["store"] == "steam":
                 conn.execute(
-                    "UPDATE posts SET title = ?, content = ?" " WHERE app_id = ?",
+                    "UPDATE posts SET title = ?, content = ?"
+                    " WHERE app_id = ?",
                     (title, content, id),
                 )
             else:
