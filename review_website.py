@@ -6,6 +6,7 @@ from flask import (
     redirect,
     url_for,
 )
+from flask_httpauth import HTTPBasicAuth
 import sqlite3
 from werkzeug.exceptions import abort
 import json
@@ -14,6 +15,14 @@ import os
 
 PRODUCTION = os.environ.get('PRODUCTION') == '1'
 DEV = not PRODUCTION
+
+auth = HTTPBasicAuth()
+
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and users.get(username) == password:
+        return username
 
 
 class PrefixMiddleware:
@@ -24,7 +33,7 @@ class PrefixMiddleware:
     def __call__(self, environ, start_response):
         path = environ['PATH_INFO']
         if environ['PATH_INFO'].startswith(self.prefix):
-            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
+            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix) :]
             environ['SCRIPT_NAME'] = self.prefix
             return self.app(environ, start_response)
         else:
@@ -37,9 +46,11 @@ app = Flask(__name__)
 if PRODUCTION:
     app.config["ENV"] = "production"
     app.config["SECRET_KEY"] = os.environ.get('SECRET_KEY')
+    users = {os.environ.get('AUTH_USER'): os.environ.get('AUTH_PASS')}
     app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/game-reviews')
 else:
     app.config["SECRET_KEY"] = "example"
+    users = {'dev': 'welcome'}
 
 
 def get_db_connection():
@@ -119,14 +130,9 @@ def about_page():
     return render_template("about.html")
 
 
-def require_dev():
-    if not DEV:
-        abort(404)
-
-
 @app.route("/create", methods=("GET", "POST"))
+@auth.login_required
 def create():
-    require_dev()
     if request.method == "POST":
         title = request.form["title"]
         content = request.form["content"]
@@ -148,8 +154,8 @@ def create():
 
 
 @app.route("/<string:store>/<int:id>/edit", methods=("GET", "POST"))
+@auth.login_required
 def edit(store, id):
-    require_dev()
     post, app_info = get_post(id, store)
 
     if request.method == "POST":
@@ -179,8 +185,8 @@ def edit(store, id):
 
 
 @app.route("/<string:store>/<int:id>/delete", methods=("POST",))
+@auth.login_required
 def delete(store, id):
-    require_dev()
     post, app_info = get_post(id, store)
     conn = get_db_connection()
     conn.execute("DELETE FROM posts WHERE id = ?", (id,))
