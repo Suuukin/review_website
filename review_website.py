@@ -12,8 +12,9 @@ from werkzeug.exceptions import abort
 import json
 import os
 
+# flake8: noqa
 
-PRODUCTION = os.environ.get('PRODUCTION') == '1'
+PRODUCTION = os.environ.get("PRODUCTION") == "1"
 DEV = not PRODUCTION
 
 auth = HTTPBasicAuth()
@@ -26,31 +27,31 @@ def verify_password(username, password):
 
 
 class PrefixMiddleware:
-    def __init__(self, app, prefix=''):
+    def __init__(self, app, prefix=""):
         self.app = app
         self.prefix = prefix
 
     def __call__(self, environ, start_response):
-        path = environ['PATH_INFO']
-        if environ['PATH_INFO'].startswith(self.prefix):
-            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix) :]
-            environ['SCRIPT_NAME'] = self.prefix
+        path = environ["PATH_INFO"]
+        if environ["PATH_INFO"].startswith(self.prefix):
+            environ["PATH_INFO"] = environ["PATH_INFO"][len(self.prefix) :]
+            environ["SCRIPT_NAME"] = self.prefix
             return self.app(environ, start_response)
         else:
-            print('path', path)
-            start_response('404', [('Content-Type', 'text/plain')])
+            print("path", path)
+            start_response("404", [("Content-Type", "text/plain")])
             return ["This url does not belong to the app.".encode()]
 
 
 app = Flask(__name__)
 if PRODUCTION:
     app.config["ENV"] = "production"
-    app.config["SECRET_KEY"] = os.environ.get('SECRET_KEY')
-    users = {os.environ.get('AUTH_USER'): os.environ.get('AUTH_PASS')}
-    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/game-reviews')
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+    users = {os.environ.get("AUTH_USER"): os.environ.get("AUTH_PASS")}
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix="/game-reviews")
 else:
     app.config["SECRET_KEY"] = "example"
-    users = {'dev': 'welcome'}
+    users = {"dev": "welcome"}
 
 
 def get_db_connection():
@@ -110,16 +111,21 @@ def index():
     post_sql = conn.execute(
         "SELECT posts.*, app_info.extra FROM posts LEFT JOIN app_info ON posts.app_id=app_info.app_id"
     ).fetchall()
-    conn.close()
 
     posts = []
     for row in post_sql:
         post = dict((k, row[k]) for k in row.keys())
         if row["extra"]:
             post["extra"] = json.loads(post["extra"])
-            post["genres"] = [
-                g["description"] for g in post["extra"].get("genres", [])
-            ]
+            post["genres"] = [g["description"] for g in post["extra"].get("genres", [])]
+
+        post_id = post["id"]
+        tags = conn.execute(
+            "SELECT title, color FROM posts_tags JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE posts_tags.post_id=?", (post_id,)
+        ).fetchall()
+
+        post["tags"] = tags
+
         posts.append(post)
 
     conn.close()
@@ -170,8 +176,7 @@ def edit(store, id):
             conn = get_db_connection()
             if post["store"] == "steam":
                 conn.execute(
-                    "UPDATE posts SET title = ?, content = ?"
-                    " WHERE app_id = ?",
+                    "UPDATE posts SET title = ?, content = ?" " WHERE app_id = ?",
                     (title, content, id),
                 )
             else:
@@ -198,5 +203,5 @@ def delete(store, id):
     return redirect(url_for("index"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
