@@ -92,7 +92,7 @@ def post(post_id, store):
         bg_img = app_info["background"]
         desc = app_info["detailed_description"]
         return render_template(
-            "steam_post.html",
+            "steam_post.j2",
             post=post,
             store_url=store_url,
             image=steam_image,
@@ -101,7 +101,7 @@ def post(post_id, store):
         )
     else:
         store_url = None
-    return render_template("post.html", post=post, store_url=store_url)
+    return render_template("post.j2", post=post, store_url=store_url)
 
 
 @app.route("/")
@@ -122,12 +122,14 @@ def index():
             ]
         posts.append(post)
 
-    return render_template("index.html", posts=posts)
+    conn.close()
+
+    return render_template("index.j2", posts=posts)
 
 
 @app.route("/about")
 def about_page():
-    return render_template("about.html")
+    return render_template("about.j2")
 
 
 @app.route("/create", methods=("GET", "POST"))
@@ -150,7 +152,7 @@ def create():
             conn.close()
             return redirect(url_for("index"))
 
-    return render_template("create.html")
+    return render_template("create.j2")
 
 
 @app.route("/<string:store>/<int:id>/edit", methods=("GET", "POST"))
@@ -181,7 +183,7 @@ def edit(store, id):
             conn.close()
             return redirect(url_for("index"))
 
-    return render_template("edit.html", post=post)
+    return render_template("edit.j2", post=post)
 
 
 @app.route("/<string:store>/<int:id>/delete", methods=("POST",))
