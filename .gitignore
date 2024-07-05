@@ -1,0 +1,13 @@
+__pycache__
+.vscode
+steam_data
+website_venv
+reviews.yaml
+reviews2.yaml
+workflowy_game_reviews.opml
+steam.json
+steam_no_match.txt
+steam_matches.json
+database_backup.db
+database.db
+api.steampowered.com.json
