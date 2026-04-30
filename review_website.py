@@ -1,3 +1,5 @@
+from functools import wraps
+
 from flask import (
     Flask,
     render_template,
@@ -5,8 +7,8 @@ from flask import (
     flash,
     redirect,
     url_for,
+    session,
 )
-from flask_httpauth import HTTPBasicAuth
 import sqlite3
 from werkzeug.exceptions import abort
 import json
@@ -17,13 +19,10 @@ import os
 PRODUCTION = os.environ.get("PRODUCTION") == "1"
 DEV = not PRODUCTION
 
-auth = HTTPBasicAuth()
-
-
-@auth.verify_password
-def verify_password(username, password):
-    if username in users and users.get(username) == password:
-        return username
+if PRODUCTION:
+    users = {os.environ.get("AUTH_USER"): os.environ.get("AUTH_PASS")}
+else:
+    users = {"dev": "welcome"}
 
 
 class PrefixMiddleware:
@@ -47,11 +46,18 @@ app = Flask(__name__)
 if PRODUCTION:
     app.config["ENV"] = "production"
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
-    users = {os.environ.get("AUTH_USER"): os.environ.get("AUTH_PASS")}
     app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix="/game-reviews")
 else:
     app.config["SECRET_KEY"] = "example"
-    users = {"dev": "welcome"}
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def get_db_connection():
@@ -138,8 +144,32 @@ def about_page():
     return render_template("about.j2")
 
 
+@app.route("/login", methods=("GET", "POST"))
+def login():
+    if session.get("logged_in"):
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username in users and users.get(username) == password:
+            session["logged_in"] = True
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid username or password")
+
+    return render_template("login.j2")
+
+
+@app.route("/logout", methods=("POST",))
+def logout():
+    session.pop("logged_in", None)
+    return redirect(url_for("index"))
+
+
 @app.route("/create", methods=("GET", "POST"))
-@auth.login_required
+@login_required
 def create():
     if request.method == "POST":
         title = request.form["title"]
@@ -162,7 +192,7 @@ def create():
 
 
 @app.route("/<string:store>/<int:id>/edit", methods=("GET", "POST"))
-@auth.login_required
+@login_required
 def edit(store, id):
     post, app_info = get_post(id, store)
 
@@ -192,7 +222,7 @@ def edit(store, id):
 
 
 @app.route("/<string:store>/<int:id>/delete", methods=("POST",))
-@auth.login_required
+@login_required
 def delete(store, id):
     post, app_info = get_post(id, store)
     conn = get_db_connection()
