@@ -13,6 +13,7 @@ import sqlite3
 from werkzeug.exceptions import abort
 import json
 import os
+import markdown
 
 # flake8: noqa
 
@@ -90,9 +91,17 @@ def get_post(post_id, store):
     return post, app_info
 
 
+def render_markdown(text):
+    return markdown.markdown(
+        text,
+        extensions=["tables", "fenced_code", "codehilite", "toc", "nl2br"],
+    )
+
+
 @app.route("/<string:store>/<int:post_id>")
 def post(post_id, store):
     post, app_info = get_post(post_id, store)
+    post_content = render_markdown(post["content"])
     if post["store"] == "steam":
         store_url = f"https://steampowered.com/app/{post['app_id']}"
         steam_image = app_info["header_image"]
@@ -101,6 +110,7 @@ def post(post_id, store):
         return render_template(
             "steam_post.j2",
             post=post,
+            post_content=post_content,
             store_url=store_url,
             image=steam_image,
             bg_img=bg_img,
@@ -108,7 +118,7 @@ def post(post_id, store):
         )
     else:
         store_url = None
-    return render_template("post.j2", post=post, store_url=store_url)
+    return render_template("post.j2", post=post, post_content=post_content, store_url=store_url)
 
 
 @app.route("/")

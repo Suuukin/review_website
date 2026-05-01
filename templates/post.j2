@@ -9,6 +9,6 @@
         <img class="store_image" src="/game-reviews/static/images/store.svg" alt="Store Link">
         {% endif %}
         <span class="badge badge-primary">{{ post['created'] }}</span>
-        <p>{{ post['content'] }}</p>
+        <p>{{ post_content|safe }}</p>
     </div>
 {% endblock %}

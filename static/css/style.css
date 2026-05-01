@@ -60,3 +60,90 @@ a:active {
     margin-right: auto;
     width: 50%;
 }
+
+/* EasyMDE Dark Theme Overrides */
+.EasyMDEContainer .editor-toolbar {
+    background: #2a475e;
+    border-color: #4a6984;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 4px 6px;
+}
+
+/* Reset Bootstrap button styles inside the toolbar */
+.EasyMDEContainer .editor-toolbar button,
+.EasyMDEContainer .editor-toolbar a {
+    display: inline-block !important;
+    width: auto !important;
+    padding: 2px 6px !important;
+    margin: 0 2px !important;
+    border: none !important;
+    border-radius: 3px !important;
+    background: transparent !important;
+    color: #c7d5e0 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    cursor: pointer;
+}
+
+.EasyMDEContainer .editor-toolbar button:hover,
+.EasyMDEContainer .editor-toolbar a:hover,
+.EasyMDEContainer .editor-toolbar button.active,
+.EasyMDEContainer .editor-toolbar a.active {
+    background: #1b2838 !important;
+    color: #fff !important;
+}
+
+.EasyMDEContainer .editor-toolbar i.separator {
+    border-left: 1px solid #4a6984;
+    border-right: none;
+    margin: 0 4px;
+}
+
+/* Editor text area - override all EasyMDE/CodeMirror backgrounds */
+.EasyMDEContainer .CodeMirror,
+.EasyMDEContainer .cm-s-easymde,
+.EasyMDEContainer .cm-s-easymde .CodeMirror-gutters,
+.EasyMDEContainer .CodeMirror-scroll,
+.EasyMDEContainer .CodeMirror-lines,
+.EasyMDEContainer .CodeMirror-code {
+    background: #1b2838 !important;
+}
+
+.EasyMDEContainer .CodeMirror {
+    color: #c7d5e0 !important;
+    border-color: #4a6984;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.EasyMDEContainer .CodeMirror-cursor {
+    border-left-color: #c7d5e0 !important;
+}
+
+.EasyMDEContainer .CodeMirror-selected,
+.EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
+    background: #4a6984 !important;
+}
+
+.EasyMDEContainer .editor-preview,
+.EasyMDEContainer .editor-preview-side {
+    background: #1b2838 !important;
+    color: #c7d5e0 !important;
+}
+
+.EasyMDEContainer .editor-preview pre,
+.EasyMDEContainer .editor-preview-side pre,
+.EasyMDEContainer .editor-preview code,
+.EasyMDEContainer .editor-preview-side code {
+    background: #2a475e !important;
+    color: #c7d5e0 !important;
+}
+
+.EasyMDEContainer .editor-statusbar {
+    background: #2a475e;
+    border-color: #4a6984;
+    color: #8b929a;
+}

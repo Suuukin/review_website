@@ -16,7 +16,7 @@
     <div class="row">
         <div class="col">
             <h3>My Review</h3>
-            <p>{{ post['content'] }}</p>
+            <p>{{ post_content|safe }}</p>
         </div>
         <div class="col d-flex flex-wrap align-items-center">
             <a href="{{store_url}}"><img class="capsule_image border border-primary" src="{{image}}"

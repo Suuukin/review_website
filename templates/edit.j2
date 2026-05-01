@@ -1,29 +1,154 @@
 {% extends 'base.j2' %}
 
 {% block content %}
-<h1>{% block title %} Edit "{{ post['title'] }}" {% endblock %}</h1>
+<div class="p-3">
+    <h1 class="mb-4">{% block title %} Edit "{{ post['title'] }}" {% endblock %}</h1>
 
-<form method="post">
-    <div class="form-group">
-        <label for="title">Title</label>
-        <input type="text" name="title" placeholder="Post title" class="form-control"
-            value="{{ request.form['title'] or post['title'] }}">
-        </input>
-    </div>
+    <form method="post" id="edit-form">
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
+                value="{{ request.form['title'] or post['title'] }}">
+        </div>
 
-    <div class="form-group">
-        <label for="content">Content</label>
-        <textarea name="content" placeholder="Post content"
-            class="form-control">{{ request.form['content'] or post['content'] }}</textarea>
-    </div>
-    <div class="form-group">
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </div>
-</form>
+        <div class="mb-3">
+            <label for="content" class="form-label">Content (Markdown)</label>
+            <textarea name="content" id="content" class="form-control">{{ request.form['content'] or post['content'] }}</textarea>
+        </div>
 
-<form action="{{ url_for('delete', id=post['id'], store=post['store']) }}" method="POST">
-    <input type="submit" value="Delete Post" class="btn btn-danger btn-sm"
-        onclick="return confirm('Are you sure you want to delete this post?')">
-</form>
-<hr>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+
+    <hr>
+    <form action="{{ url_for('delete', id=post['id'], store=post['store']) }}" method="POST">
+        <input type="submit" value="Delete Post" class="btn btn-danger btn-sm"
+            onclick="return confirm('Are you sure you want to delete this post?')">
+    </form>
+</div>
+
+<style>
+/* Dark theme for EasyMDE — inline so it loads AFTER the CDN CSS */
+.EasyMDEContainer .editor-toolbar {
+    background-color: #2a475e !important;
+    border: 1px solid #4a6984 !important;
+    border-bottom: none !important;
+    border-radius: 6px 6px 0 0 !important;
+    padding: 6px !important;
+}
+
+.EasyMDEContainer .editor-toolbar button,
+.EasyMDEContainer .editor-toolbar .fa {
+    color: #c7d5e0 !important;
+}
+
+.EasyMDEContainer .editor-toolbar button:hover,
+.EasyMDEContainer .editor-toolbar button.active,
+.EasyMDEContainer .editor-toolbar .fa:hover,
+.EasyMDEContainer .editor-toolbar .active .fa {
+    background-color: #1b2838 !important;
+    color: #ffffff !important;
+}
+
+.EasyMDEContainer .editor-toolbar i.separator {
+    border-left-color: #4a6984 !important;
+    border-right-color: transparent !important;
+}
+
+.EasyMDEContainer .CodeMirror {
+    background-color: #1b2838 !important;
+    color: #c7d5e0 !important;
+    border: 1px solid #4a6984 !important;
+    border-radius: 0 0 6px 6px !important;
+}
+
+.EasyMDEContainer .CodeMirror-cursor {
+    border-left-color: #c7d5e0 !important;
+}
+
+.EasyMDEContainer .CodeMirror .CodeMirror-selected,
+.EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
+    background: #4a6984 !important;
+}
+
+.EasyMDEContainer .cm-s-easymde .CodeMirror-gutters {
+    background-color: #1b2838 !important;
+    border-right: 1px solid #4a6984 !important;
+}
+
+.EasyMDEContainer .cm-s-easymde .CodeMirror-linenumber {
+    color: #6a8098 !important;
+}
+
+/* Force single-row toolbar with consistent button sizes */
+.EasyMDEContainer .editor-toolbar {
+    white-space: nowrap !important;
+    overflow-x: auto !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+}
+
+.EasyMDEContainer .editor-toolbar > * {
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+/* Fix the table button which uses text instead of an icon */
+.EasyMDEContainer .editor-toolbar button {
+    min-width: 30px !important;
+    max-width: 30px !important;
+    height: 30px !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    font-size: 14px !important;
+    overflow: hidden !important;
+    padding: 4px 6px !important;
+}
+
+/* Style the scrollbar for the toolbar */
+.EasyMDEContainer .editor-toolbar::-webkit-scrollbar {
+    height: 4px;
+}
+.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-track {
+    background: #1b2838;
+}
+.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-thumb {
+    background: #4a6984;
+    border-radius: 2px;
+}
+
+/* Form inputs to match dark theme */
+#title.form-control {
+    background-color: #1b2838;
+    color: #c7d5e0;
+    border-color: #4a6984;
+}
+#title.form-control::placeholder {
+    color: #6a8098;
+}
+#title.form-control:focus {
+    background-color: #1b2838;
+    color: #c7d5e0;
+    border-color: #66c0f4;
+    box-shadow: 0 0 0 0.2rem rgba(102, 192, 244, 0.25);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script>
+    const easyMDE = new EasyMDE({
+        element: document.getElementById('content'),
+        spellChecker: false,
+        placeholder: 'Write your review in Markdown...',
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'code', 'table', '|',
+            'guide'
+        ],
+        status: false,
+    });
+</script>
 {% endblock %}
