@@ -1,5 +1,9 @@
 {% extends 'base.j2' %}
 
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="p-3">
     <h1 class="mb-4">{% block title %} Create a New Post {% endblock %}</h1>
@@ -9,6 +13,22 @@
             <label for="title" class="form-label">Title</label>
             <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
                 value="{{ request.form['title'] }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="game-search" class="form-label">Game (optional)</label>
+            <input type="text" id="game-search" placeholder="Search for a Steam game…" class="form-control" autocomplete="off">
+            <input type="hidden" name="app_id" id="app_id" value="">
+            <input type="hidden" name="store" id="store" value="other">
+            <div id="game-selected" class="d-none mt-2 p-2 border rounded d-flex align-items-center gap-3" style="background-color: #1b2838; border-color: #4a6984 !important;">
+                <img id="selected-game-image" src="" alt="" class="rounded" style="width: 92px; height: 43px; object-fit: cover;">
+                <div>
+                    <strong id="selected-game-name" class="text-white"></strong>
+                    <br>
+                    <small class="text-muted">App ID: <span id="selected-game-appid"></span></small>
+                </div>
+                <button type="button" id="clear-game" class="btn btn-sm btn-outline-secondary ms-auto">Remove</button>
+            </div>
         </div>
 
         <div class="mb-3">
@@ -114,24 +134,55 @@
 }
 
 /* Form inputs to match dark theme */
-#title.form-control {
-    background-color: #1b2838;
-    color: #c7d5e0;
-    border-color: #4a6984;
+#title.form-control,
+#game-search.form-control,
+.ts-wrapper.form-control,
+.ts-wrapper.form-control .ts-control {
+    background-color: #1b2838 !important;
+    color: #c7d5e0 !important;
+    border-color: #4a6984 !important;
 }
-#title.form-control::placeholder {
+#title.form-control::placeholder,
+#game-search.form-control::placeholder {
     color: #6a8098;
 }
-#title.form-control:focus {
+#title.form-control:focus,
+#game-search.form-control:focus {
     background-color: #1b2838;
     color: #c7d5e0;
     border-color: #66c0f4;
     box-shadow: 0 0 0 0.2rem rgba(102, 192, 244, 0.25);
 }
+
+/* TomSelect dark theme overrides */
+.ts-wrapper.form-control .ts-control {
+    border: none !important;
+    box-shadow: none !important;
+}
+.ts-dropdown {
+    background-color: #1b2838 !important;
+    border: 1px solid #4a6984 !important;
+    color: #c7d5e0 !important;
+}
+.ts-dropdown .option {
+    color: #c7d5e0 !important;
+}
+.ts-dropdown .option.active {
+    background-color: #2a475e !important;
+    color: #ffffff !important;
+}
+.ts-dropdown .option:hover {
+    background-color: #2a475e !important;
+}
+.ts-dropdown .no-results {
+    color: #6a8098 !important;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+    // EasyMDE initialization
     const easyMDE = new EasyMDE({
         element: document.getElementById('content'),
         spellChecker: false,
@@ -143,6 +194,65 @@
             'guide'
         ],
         status: false,
+    });
+
+    // TomSelect game search — cache loaded games for use in onChange
+    let gameCache = {};
+
+    const gameSearch = new TomSelect('#game-search', {
+        valueField: 'app_id',
+        labelField: 'name',
+        searchField: 'name',
+        maxOptions: 20,
+        placeholder: 'Search for a Steam game…',
+        loadThrottle: 300,
+        shouldLoad: function(query) {
+            return query.length >= 2;
+        },
+        load: function(query, callback) {
+            fetch('/api/games/search?q=' + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(function(g) { gameCache[g.app_id] = g; });
+                    callback(data);
+                })
+                .catch(function() {
+                    callback();
+                });
+        },
+        render: {
+            option: function(data, escape) {
+                var img = data.capsule_image
+                    ? '<img src="' + escape(data.capsule_image) + '" alt="" class="me-2" style="width:46px;height:22px;object-fit:cover;border-radius:3px;vertical-align:middle;">'
+                    : '';
+                return '<div class="d-flex align-items-center py-1">' +
+                    img +
+                    '<span>' + escape(data.name) + '</span>' +
+                    '</div>';
+            },
+            item: function(data, escape) {
+                return '<span>' + escape(data.name) + '</span>';
+            }
+        },
+        onChange: function(value) {
+            if (value && gameCache[value]) {
+                var g = gameCache[value];
+                document.getElementById('app_id').value = value;
+                document.getElementById('store').value = 'steam';
+                document.getElementById('selected-game-name').textContent = g.name;
+                document.getElementById('selected-game-image').src = g.header_image;
+                document.getElementById('selected-game-appid').textContent = value;
+                document.getElementById('game-selected').classList.remove('d-none');
+            }
+        }
+    });
+
+    // Handle clearing the game selection
+    document.getElementById('clear-game').addEventListener('click', function() {
+        gameSearch.clear();
+        document.getElementById('app_id').value = '';
+        document.getElementById('store').value = 'other';
+        document.getElementById('game-selected').classList.add('d-none');
     });
 </script>
 {% endblock %}

@@ -22,7 +22,8 @@
     </form>
 
     <hr>
-    <form action="{{ url_for('delete', id=post['id'], store=post['store']) }}" method="POST">
+    {% set delete_id = post['app_id'] if post['store'] == 'steam' else post['id'] %}
+    <form action="{{ url_for('delete', id=delete_id, store=post['store']) }}" method="POST">
         <input type="submit" value="Delete Post" class="btn btn-danger btn-sm"
             onclick="return confirm('Are you sure you want to delete this post?')">
     </form>

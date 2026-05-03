@@ -8,6 +8,7 @@ from flask import (
     redirect,
     url_for,
     session,
+    jsonify,
 )
 import sqlite3
 from werkzeug.exceptions import abort
@@ -184,6 +185,8 @@ def create():
     if request.method == "POST":
         title = request.form["title"]
         content = request.form["content"]
+        app_id = request.form.get("app_id") or None
+        store = request.form.get("store", "other")
 
         if not title:
             flash("Title is required")
@@ -191,14 +194,44 @@ def create():
             print("create post")
             conn = get_db_connection()
             conn.execute(
-                "INSERT INTO posts (title, content) VALUES (?, ?)",
-                (title, content),
+                "INSERT INTO posts (title, content, app_id, store) VALUES (?, ?, ?, ?)",
+                (title, content, app_id, store),
             )
             conn.commit()
             conn.close()
             return redirect(url_for("index"))
 
     return render_template("create.j2")
+
+
+@app.route("/api/games/search")
+def api_games_search():
+    q = request.args.get("q", "").strip()
+    if not q or len(q) < 2:
+        return jsonify([])
+
+    conn = get_db_connection()
+    rows = conn.execute(
+        """SELECT app_id, header_image, extra
+           FROM app_info
+           WHERE json_extract(extra, '$.name') LIKE ?
+           ORDER BY app_id
+           LIMIT 20""",
+        (f"%{q}%",),
+    ).fetchall()
+    conn.close()
+
+    results = []
+    for row in rows:
+        extra = json.loads(row["extra"])
+        results.append({
+            "app_id": row["app_id"],
+            "name": extra.get("name", "Unknown"),
+            "header_image": row["header_image"],
+            "capsule_image": extra.get("capsule_image", ""),
+        })
+
+    return jsonify(results)
 
 
 @app.route("/<string:store>/<int:id>/edit", methods=("GET", "POST"))

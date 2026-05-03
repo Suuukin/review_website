@@ -37,10 +37,13 @@
     <span class="edit badge badge-primary float-end">{{ post['created'] }}</span>
     <span></span>
 
-    {% if config['ENV'] != 'production' %}
+    {% if session.get('logged_in') %}
         <a href="{{ url_for('edit', id=id, store=post['store']) }}">
             <span class="badge badge-warning float-end">Edit</span>
         </a>
+        <form action="{{ url_for('delete', id=id, store=post['store']) }}" method="POST" class="d-inline float-end">
+            <button type="submit" class="badge badge-danger" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>
+        </form>
     {% endif %}
 
     <hr>
