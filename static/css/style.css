@@ -61,175 +61,26 @@ a:active {
     width: 50%;
 }
 
-/* ─── EasyMDE Dark Theme ─── */
-
+/* ─── EasyMDE Toolbar Layout ─── */
+/* Structural only — prevents the table button (text, not icon) from wrapping */
 .EasyMDEContainer .editor-toolbar {
-    background: #2a475e !important;
-    border: 1px solid #4a6984 !important;
-    border-bottom: none !important;
-    border-radius: 6px 6px 0 0 !important;
-    padding: 6px !important;
-    white-space: nowrap !important;
-    overflow-x: auto !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
+    white-space: nowrap;
+    overflow-x: auto;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
 }
-
 .EasyMDEContainer .editor-toolbar > * {
-    flex-shrink: 0 !important;
-    display: inline-block !important;
+    flex-shrink: 0;
+    display: inline-block;
 }
-
-.EasyMDEContainer .editor-toolbar button,
-.EasyMDEContainer .editor-toolbar a,
-.EasyMDEContainer .editor-toolbar .fa {
-    color: #c7d5e0 !important;
-}
-
-.EasyMDEContainer .editor-toolbar button,
-.EasyMDEContainer .editor-toolbar a {
-    display: inline-block !important;
-    min-width: 30px !important;
-    max-width: 30px !important;
-    height: 30px !important;
-    padding: 4px 6px !important;
-    margin: 0 2px !important;
-    border: none !important;
-    border-radius: 3px !important;
-    background: transparent !important;
-    font-size: 14px !important;
-    line-height: 1 !important;
-    text-align: center !important;
-    overflow: hidden !important;
-    cursor: pointer;
-}
-
-.EasyMDEContainer .editor-toolbar button:hover,
-.EasyMDEContainer .editor-toolbar a:hover,
-.EasyMDEContainer .editor-toolbar button.active,
-.EasyMDEContainer .editor-toolbar a.active,
-.EasyMDEContainer .editor-toolbar .fa:hover,
-.EasyMDEContainer .editor-toolbar .active .fa {
-    background: #1b2838 !important;
-    color: #ffffff !important;
-}
-
-.EasyMDEContainer .editor-toolbar i.separator {
-    border-left: 1px solid #4a6984 !important;
-    border-right: none !important;
-    margin: 0 4px;
-}
-
-/* Editor text area */
-.EasyMDEContainer .CodeMirror,
-.EasyMDEContainer .cm-s-easymde,
-.EasyMDEContainer .cm-s-easymde .CodeMirror-gutters,
-.EasyMDEContainer .CodeMirror-scroll,
-.EasyMDEContainer .CodeMirror-lines,
-.EasyMDEContainer .CodeMirror-code {
-    background: #1b2838 !important;
-}
-
-.EasyMDEContainer .CodeMirror {
-    color: #c7d5e0 !important;
-    border: 1px solid #4a6984 !important;
-    border-radius: 0 0 6px 6px !important;
-}
-
-.EasyMDEContainer .CodeMirror-cursor {
-    border-left-color: #c7d5e0 !important;
-}
-
-.EasyMDEContainer .CodeMirror-selected,
-.EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
-    background: #4a6984 !important;
-}
-
-.EasyMDEContainer .cm-s-easymde .CodeMirror-gutters {
-    border-right: 1px solid #4a6984 !important;
-}
-
-.EasyMDEContainer .cm-s-easymde .CodeMirror-linenumber {
-    color: #6a8098 !important;
-}
-
-.EasyMDEContainer .editor-preview,
-.EasyMDEContainer .editor-preview-side {
-    background: #1b2838 !important;
-    color: #c7d5e0 !important;
-}
-
-.EasyMDEContainer .editor-preview pre,
-.EasyMDEContainer .editor-preview-side pre,
-.EasyMDEContainer .editor-preview code,
-.EasyMDEContainer .editor-preview-side code {
-    background: #2a475e !important;
-    color: #c7d5e0 !important;
-}
-
-.EasyMDEContainer .editor-statusbar {
-    background: #2a475e;
-    border-color: #4a6984;
-    color: #8b929a;
-}
-
-/* Toolbar scrollbar */
-.EasyMDEContainer .editor-toolbar::-webkit-scrollbar {
-    height: 4px;
-}
-.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-track {
-    background: #1b2838;
-}
-.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-thumb {
-    background: #4a6984;
-    border-radius: 2px;
-}
-
-/* ─── TomSelect Dark Theme ─── */
-
-.ts-wrapper.form-control {
-    padding: 0 !important;
-    border: none !important;
-}
-
-.ts-wrapper.form-control .ts-control {
-    border: none !important;
-    box-shadow: none !important;
-    background-color: #1b2838 !important;
-    color: #c7d5e0 !important;
-}
-
-.ts-wrapper.form-control .ts-control input {
-    color: #c7d5e0 !important;
-}
-
-.ts-wrapper.form-control .ts-control input::placeholder {
-    color: #6a8098 !important;
-    opacity: 1 !important;
-}
-
-.ts-dropdown {
-    background-color: #1b2838 !important;
-    border: 1px solid #4a6984 !important;
-    color: #c7d5e0 !important;
-}
-
-.ts-dropdown .option {
-    color: #c7d5e0 !important;
-}
-
-.ts-dropdown .option.active {
-    background-color: #2a475e !important;
-    color: #ffffff !important;
-}
-
-.ts-dropdown .option:hover {
-    background-color: #2a475e !important;
-}
-
-.ts-dropdown .no-results {
-    color: #6a8098 !important;
+.EasyMDEContainer .editor-toolbar button {
+    min-width: 30px;
+    max-width: 30px;
+    height: 30px;
+    text-align: center;
+    overflow: hidden;
+    padding: 4px 6px;
 }
 
 /* ─── Color Swatches (Tag Color Picker) ─── */
@@ -273,13 +124,6 @@ a:active {
 
 .new-tag-badge .remove-new-tag:hover {
     opacity: 1;
-}
-
-/* ─── Color Picker Panel ─── */
-
-.color-picker-panel {
-    background-color: #1b2838;
-    border: 1px solid #4a6984;
 }
 
 /* ─── Post Tags (display badges) ─── */
