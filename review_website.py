@@ -188,6 +188,27 @@ def create():
         app_id = request.form.get("app_id") or None
         store = request.form.get("store", "other")
 
+        # For game reviews (store == "steam"), auto-generate title from the game name
+        if store == "steam" and app_id:
+            conn = get_db_connection()
+            app_info = conn.execute(
+                "SELECT extra FROM app_info WHERE app_id = ?", (app_id,)
+            ).fetchone()
+            if app_info:
+                extra = json.loads(app_info["extra"])
+                title = extra.get("name", "Unknown")
+            conn.close()
+
+            # Check if this game already has a review
+            conn = get_db_connection()
+            existing = conn.execute(
+                "SELECT id FROM posts WHERE app_id = ? AND store = 'steam'", (app_id,)
+            ).fetchone()
+            conn.close()
+            if existing:
+                flash(f'A review for "{title}" already exists. Each game can only have one review.')
+                return render_template("create.j2")
+
         if not title:
             flash("Title is required")
         else:
@@ -212,10 +233,12 @@ def api_games_search():
 
     conn = get_db_connection()
     rows = conn.execute(
-        """SELECT app_id, header_image, extra
-           FROM app_info
-           WHERE json_extract(extra, '$.name') LIKE ?
-           ORDER BY app_id
+        """SELECT a.app_id, a.header_image, a.extra,
+                  CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END as has_review
+           FROM app_info a
+           LEFT JOIN posts p ON p.app_id = a.app_id AND p.store = 'steam'
+           WHERE json_extract(a.extra, '$.name') LIKE ?
+           ORDER BY has_review, a.app_id
            LIMIT 20""",
         (f"%{q}%",),
     ).fetchall()
@@ -229,6 +252,7 @@ def api_games_search():
             "name": extra.get("name", "Unknown"),
             "header_image": row["header_image"],
             "capsule_image": extra.get("capsule_image", ""),
+            "has_review": bool(row["has_review"]),
         })
 
     return jsonify(results)
