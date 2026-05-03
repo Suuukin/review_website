@@ -262,6 +262,8 @@
         placeholder: 'Select or create tags...',
         persist: false,
         createOnBlur: true,
+        openOnFocus: true,
+        preload: 'focus',
         loadThrottle: 300,
         load: function(query, callback) {
             fetch('/api/tags/search?q=' + encodeURIComponent(query))
