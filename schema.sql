@@ -28,9 +28,9 @@ CREATE TABLE tags (
     color TEXT
 );
 
-DROP TABLE IF EXISTS tag_relations;
+DROP TABLE IF EXISTS posts_tags;
 
-CREATE TABLE tag_relations (
+CREATE TABLE posts_tags (
     post_id INTEGER NOT NULL,
-    tag_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL
 );

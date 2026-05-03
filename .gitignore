@@ -11,3 +11,11 @@ steam_matches.json
 database_backup.db
 database.db
 api.steampowered.com.json
+
+# Logs and runtime files
+*.log
+.shoreman.pid
+
+# Planning docs
+login_link_plan.md
+new_post_enhance.md

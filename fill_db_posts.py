@@ -10,7 +10,7 @@ def get_db_connection():
 
 def main():
     with open("reviews.yaml") as fp:
-        review_data = yaml.load(fp, Loader=yaml.Loader)
+        review_data = yaml.safe_load(fp)
 
     conn = get_db_connection()
     for item in review_data:

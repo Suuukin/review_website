@@ -6,3 +6,5 @@ blinker==1.8.1
 click==8.1.7
 itsdangerous==2.2.0
 waitress==3.0.0
+markdown==3.10.2
+PyYAML==6.0.2

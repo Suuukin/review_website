@@ -13,14 +13,14 @@ A Flask web application for publishing game reviews. Content is pulled from YAML
 - **Database:** SQLite (`database.db`)
 - **Production Server:** waitress 3.0.0
 - **Markdown:** Python-Markdown (renders post content), EasyMDE editor (for create/edit forms)
-- **JS Dependencies:** jQuery 3.3.1, Popper.js 1.14.7, Bootstrap 5.3.3 bundle, EasyMDE 2.18.0
+- **JS Dependencies:** Bootstrap 5.3.3 bundle (includes Popper), EasyMDE 2.18.0
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `review_website.py` | Main Flask app — routes, auth, DB helpers, PrefixMiddleware |
-| `schema.sql` | Database schema (posts, app_info, tags, tag_relations) |
+| `schema.sql` | Database schema (posts, app_info, tags, posts_tags) |
 | `init_db.py` | Initialize DB from `schema.sql` and seed a test post |
 | `fill_db_posts.py` | Populate posts from `reviews.yaml` |
 | `fill_db_app_info.py` | Populate app_info from Steam API data |
@@ -70,10 +70,10 @@ review_website/
 - `app_id` — PK, matches Steam app ID
 - `detailed_description`, `header_image`, `background`, `genres`, `extra` — Steam API data
 
-### `tags` / `tag_relations`
+### `tags` / `posts_tags`
 - Many-to-many relationship between posts and tags
 - `tags`: `tag_id` (PK), `title`, `color`
-- `tag_relations`: `post_id`, `tag_id` (links posts to tags)
+- `posts_tags`: `post_id`, `tag_id` (links posts to tags)
 
 ## Routes
 
@@ -156,16 +156,3 @@ This avoids manual venv management and ensures reproducible environments.
 - Post content is stored as **Markdown** and rendered to HTML server-side using Python-Markdown
 - Enabled extensions: `tables`, `fenced_code`, `codehilite`, `toc`, `nl2br`
 - The `render_markdown()` function in `review_website.py` handles this
-
-## Gotchas & Notes
-
-1. **URL prefix in production**: All routes and static assets are served under `/game-reviews`. The `PrefixMiddleware` handles path rewriting. Never hardcode absolute paths — always use `url_for()`.
-2. **Static asset path**: The CSS link in `base.j2` uses `/game-reviews/static/css/style.css?v=2` (hardcoded for production). This should ideally use `url_for('static', ...)` for correctness in both modes.
-3. **Bootstrap version**: Templates load Bootstrap 5.3.3 CSS but also include jQuery 3.3.1 and Popper 1.14.7 which are Bootstrap 4 dependencies. This is inconsistent — only the Bootstrap 5 bundle JS is actually needed.
-4. **Schema trailing comma**: `schema.sql` has a trailing comma in the `tag_relations` table definition which would cause a syntax error on fresh DB creation. The production DB was likely created with a corrected schema.
-5. **Delete route bug**: The `/delete` route always deletes by `id` (`DELETE FROM posts WHERE id = ?`), but for Steam posts the URL parameter `id` is the `app_id`, not the auto-increment `id`. This will fail to delete Steam posts correctly.
-6. **YAML loader**: `fill_db_posts.py` uses `yaml.Loader` (not `yaml.SafeLoader`). Consider switching to `SafeLoader` for safety.
-7. **Session secret**: In dev mode, `SECRET_KEY` is hardcoded as `"example"`. This is fine for development but never commit this pattern.
-8. **Navbar toggler data attributes**: The navbar toggler in `base.j2` uses Bootstrap 4-style `data-toggle`/`data-target` attributes instead of Bootstrap 5's `data-bs-toggle`/`data-bs-target`. This may cause the mobile toggle to not work.
-9. **Missing Python packages in requirements.txt**: `markdown` and `PyYAML` are used by the app but not listed in `requirements.txt`.
-10. **`posts_tags` table name mismatch**: The `index` route queries a table called `posts_tags`, but the schema defines it as `tag_relations`. This will cause an error if tags are used.

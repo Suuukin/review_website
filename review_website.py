@@ -236,7 +236,10 @@ def edit(store, id):
 def delete(store, id):
     post, app_info = get_post(id, store)
     conn = get_db_connection()
-    conn.execute("DELETE FROM posts WHERE id = ?", (id,))
+    if post["store"] == "steam":
+        conn.execute("DELETE FROM posts WHERE app_id = ? AND store = ?", (id, store))
+    else:
+        conn.execute("DELETE FROM posts WHERE id = ?", (id,))
     conn.commit()
     conn.close()
     flash('"{}" was successfully deleted!'.format(post["title"]))
