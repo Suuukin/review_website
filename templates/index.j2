@@ -30,7 +30,7 @@
     {% if tags %}
         <div class="vr"></div>
         {% for tag in tags %}
-            <span class="badge {{tag['color']}}">{{tag['title']}}</span>
+            <span class="tag-badge" style="background-color: {{ tag['color'] or '#4a6984' }};">{{ tag['title'] }}</span>
         {% endfor %}
     {% endif %}
 

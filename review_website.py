@@ -103,6 +103,14 @@ def render_markdown(text):
 def post(post_id, store):
     post, app_info = get_post(post_id, store)
     post_content = render_markdown(post["content"])
+
+    conn = get_db_connection()
+    tags = conn.execute(
+        "SELECT tags.title, tags.color FROM posts_tags JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE posts_tags.post_id = ?",
+        (post["id"],),
+    ).fetchall()
+    conn.close()
+
     if post["store"] == "steam":
         store_url = f"https://steampowered.com/app/{post['app_id']}"
         steam_image = app_info["header_image"]
@@ -116,10 +124,11 @@ def post(post_id, store):
             image=steam_image,
             bg_img=bg_img,
             desc=desc,
+            tags=tags,
         )
     else:
         store_url = None
-    return render_template("post.j2", post=post, post_content=post_content, store_url=store_url)
+    return render_template("post.j2", post=post, post_content=post_content, store_url=store_url, tags=tags)
 
 
 @app.route("/")
@@ -212,12 +221,36 @@ def create():
         if not title:
             flash("Title is required")
         else:
-            print("create post")
             conn = get_db_connection()
             conn.execute(
                 "INSERT INTO posts (title, content, app_id, store) VALUES (?, ?, ?, ?)",
                 (title, content, app_id, store),
             )
+            post_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+            # Process existing tags
+            for tag_id in request.form.getlist("tags"):
+                if tag_id and tag_id.isdigit():
+                    conn.execute(
+                        "INSERT INTO posts_tags (post_id, tag_id) VALUES (?, ?)",
+                        (post_id, int(tag_id)),
+                    )
+
+            # Process new tags
+            new_tags_json = request.form.get("new_tags", "")
+            if new_tags_json:
+                new_tags = json.loads(new_tags_json)
+                for nt in new_tags:
+                    cur = conn.execute(
+                        "INSERT INTO tags (title, color) VALUES (?, ?)",
+                        (nt["title"], nt.get("color", "")),
+                    )
+                    new_tag_id = cur.lastrowid
+                    conn.execute(
+                        "INSERT INTO posts_tags (post_id, tag_id) VALUES (?, ?)",
+                        (post_id, new_tag_id),
+                    )
+
             conn.commit()
             conn.close()
             return redirect(url_for("index"))
@@ -258,6 +291,23 @@ def api_games_search():
     return jsonify(results)
 
 
+@app.route("/api/tags/search")
+def api_tags_search():
+    q = request.args.get("q", "").strip()
+    conn = get_db_connection()
+    if q:
+        rows = conn.execute(
+            "SELECT tag_id, title, color FROM tags WHERE title LIKE ? ORDER BY title LIMIT 20",
+            (f"%{q}%",),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT tag_id, title, color FROM tags ORDER BY title LIMIT 50"
+        ).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
+
+
 @app.route("/<string:store>/<int:id>/edit", methods=("GET", "POST"))
 @login_required
 def edit(store, id):
@@ -281,11 +331,47 @@ def edit(store, id):
                     "UPDATE posts SET title = ?, content = ?" " WHERE id = ?",
                     (title, content, id),
                 )
+
+            # Update tags: delete all existing tag relations and re-insert
+            conn.execute("DELETE FROM posts_tags WHERE post_id = ?", (post["id"],))
+
+            for tag_id in request.form.getlist("tags"):
+                if tag_id and tag_id.isdigit():
+                    conn.execute(
+                        "INSERT INTO posts_tags (post_id, tag_id) VALUES (?, ?)",
+                        (post["id"], int(tag_id)),
+                    )
+
+            new_tags_json = request.form.get("new_tags", "")
+            if new_tags_json:
+                new_tags = json.loads(new_tags_json)
+                for nt in new_tags:
+                    cur = conn.execute(
+                        "INSERT INTO tags (title, color) VALUES (?, ?)",
+                        (nt["title"], nt.get("color", "")),
+                    )
+                    new_tag_id = cur.lastrowid
+                    conn.execute(
+                        "INSERT INTO posts_tags (post_id, tag_id) VALUES (?, ?)",
+                        (post["id"], new_tag_id),
+                    )
+
             conn.commit()
             conn.close()
             return redirect(url_for("index"))
 
-    return render_template("edit.j2", post=post)
+    # GET — fetch current tags for pre-populating the form
+    conn = get_db_connection()
+    post_tags = [
+        dict(row)
+        for row in conn.execute(
+            "SELECT tags.tag_id, tags.title, tags.color FROM posts_tags JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE posts_tags.post_id = ?",
+            (post["id"],),
+        ).fetchall()
+    ]
+    conn.close()
+
+    return render_template("edit.j2", post=post, post_tags=post_tags)
 
 
 @app.route("/<string:store>/<int:id>/delete", methods=("POST",))

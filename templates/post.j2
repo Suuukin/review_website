@@ -9,6 +9,18 @@
         <img class="store_image" src="{{ url_for('static', filename='images/store.svg') }}" alt="Store Link">
         {% endif %}
         <span class="badge badge-primary">{{ post['created'] }}</span>
+        {% if tags %}
+        <div class="d-flex flex-wrap gap-2 my-2">
+            {% for tag in tags %}
+            <span class="tag-badge" style="background-color: {{ tag['color'] or '#4a6984' }};">{{ tag['title'] }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
         <p>{{ post_content|safe }}</p>
     </div>
+{% endblock %}
+
+{% block right_panel %}
+<div class="right_panel p-3">
+</div>
 {% endblock %}

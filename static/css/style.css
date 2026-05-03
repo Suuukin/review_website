@@ -61,48 +61,67 @@ a:active {
     width: 50%;
 }
 
-/* EasyMDE Dark Theme Overrides */
+/* ─── EasyMDE Dark Theme ─── */
+
 .EasyMDEContainer .editor-toolbar {
-    background: #2a475e;
-    border-color: #4a6984;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    white-space: nowrap;
-    overflow-x: auto;
-    padding: 4px 6px;
+    background: #2a475e !important;
+    border: 1px solid #4a6984 !important;
+    border-bottom: none !important;
+    border-radius: 6px 6px 0 0 !important;
+    padding: 6px !important;
+    white-space: nowrap !important;
+    overflow-x: auto !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
 }
 
-/* Reset Bootstrap button styles inside the toolbar */
+.EasyMDEContainer .editor-toolbar > * {
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+.EasyMDEContainer .editor-toolbar button,
+.EasyMDEContainer .editor-toolbar a,
+.EasyMDEContainer .editor-toolbar .fa {
+    color: #c7d5e0 !important;
+}
+
 .EasyMDEContainer .editor-toolbar button,
 .EasyMDEContainer .editor-toolbar a {
     display: inline-block !important;
-    width: auto !important;
-    padding: 2px 6px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    height: 30px !important;
+    padding: 4px 6px !important;
     margin: 0 2px !important;
     border: none !important;
     border-radius: 3px !important;
     background: transparent !important;
-    color: #c7d5e0 !important;
     font-size: 14px !important;
-    line-height: 1.4 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    overflow: hidden !important;
     cursor: pointer;
 }
 
 .EasyMDEContainer .editor-toolbar button:hover,
 .EasyMDEContainer .editor-toolbar a:hover,
 .EasyMDEContainer .editor-toolbar button.active,
-.EasyMDEContainer .editor-toolbar a.active {
+.EasyMDEContainer .editor-toolbar a.active,
+.EasyMDEContainer .editor-toolbar .fa:hover,
+.EasyMDEContainer .editor-toolbar .active .fa {
     background: #1b2838 !important;
-    color: #fff !important;
+    color: #ffffff !important;
 }
 
 .EasyMDEContainer .editor-toolbar i.separator {
-    border-left: 1px solid #4a6984;
-    border-right: none;
+    border-left: 1px solid #4a6984 !important;
+    border-right: none !important;
     margin: 0 4px;
 }
 
-/* Editor text area - override all EasyMDE/CodeMirror backgrounds */
+/* Editor text area */
 .EasyMDEContainer .CodeMirror,
 .EasyMDEContainer .cm-s-easymde,
 .EasyMDEContainer .cm-s-easymde .CodeMirror-gutters,
@@ -114,9 +133,8 @@ a:active {
 
 .EasyMDEContainer .CodeMirror {
     color: #c7d5e0 !important;
-    border-color: #4a6984;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border: 1px solid #4a6984 !important;
+    border-radius: 0 0 6px 6px !important;
 }
 
 .EasyMDEContainer .CodeMirror-cursor {
@@ -126,6 +144,14 @@ a:active {
 .EasyMDEContainer .CodeMirror-selected,
 .EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
     background: #4a6984 !important;
+}
+
+.EasyMDEContainer .cm-s-easymde .CodeMirror-gutters {
+    border-right: 1px solid #4a6984 !important;
+}
+
+.EasyMDEContainer .cm-s-easymde .CodeMirror-linenumber {
+    color: #6a8098 !important;
 }
 
 .EasyMDEContainer .editor-preview,
@@ -146,4 +172,123 @@ a:active {
     background: #2a475e;
     border-color: #4a6984;
     color: #8b929a;
+}
+
+/* Toolbar scrollbar */
+.EasyMDEContainer .editor-toolbar::-webkit-scrollbar {
+    height: 4px;
+}
+.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-track {
+    background: #1b2838;
+}
+.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-thumb {
+    background: #4a6984;
+    border-radius: 2px;
+}
+
+/* ─── TomSelect Dark Theme ─── */
+
+.ts-wrapper.form-control {
+    padding: 0 !important;
+    border: none !important;
+}
+
+.ts-wrapper.form-control .ts-control {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: #1b2838 !important;
+    color: #c7d5e0 !important;
+}
+
+.ts-wrapper.form-control .ts-control input {
+    color: #c7d5e0 !important;
+}
+
+.ts-wrapper.form-control .ts-control input::placeholder {
+    color: #6a8098 !important;
+    opacity: 1 !important;
+}
+
+.ts-dropdown {
+    background-color: #1b2838 !important;
+    border: 1px solid #4a6984 !important;
+    color: #c7d5e0 !important;
+}
+
+.ts-dropdown .option {
+    color: #c7d5e0 !important;
+}
+
+.ts-dropdown .option.active {
+    background-color: #2a475e !important;
+    color: #ffffff !important;
+}
+
+.ts-dropdown .option:hover {
+    background-color: #2a475e !important;
+}
+
+.ts-dropdown .no-results {
+    color: #6a8098 !important;
+}
+
+/* ─── Color Swatches (Tag Color Picker) ─── */
+
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.color-swatch:hover {
+    border-color: #ffffff;
+    transform: scale(1.15);
+}
+
+.color-swatch.selected {
+    border-color: #ffffff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+/* ─── New Tag Badges ─── */
+
+.new-tag-badge {
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.new-tag-badge .remove-new-tag {
+    cursor: pointer;
+    opacity: 0.7;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.new-tag-badge .remove-new-tag:hover {
+    opacity: 1;
+}
+
+/* ─── Color Picker Panel ─── */
+
+.color-picker-panel {
+    background-color: #1b2838;
+    border: 1px solid #4a6984;
+}
+
+/* ─── Post Tags (display badges) ─── */
+
+.tag-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: #fff;
+    line-height: 1.4;
 }

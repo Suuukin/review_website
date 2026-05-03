@@ -1,5 +1,9 @@
 {% extends 'base.j2' %}
 
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="p-3">
     <h1 class="mb-4">{% block title %} Edit "{{ post['title'] }}" {% endblock %}</h1>
@@ -9,6 +13,20 @@
             <label for="title" class="form-label">Title</label>
             <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
                 value="{{ request.form['title'] or post['title'] }}">
+        </div>
+
+        <!-- Tag selection -->
+        <div class="mb-3" id="tags-section">
+            <label for="tags-input" class="form-label">Tags</label>
+            <select id="tags-input" name="tags" multiple placeholder="Select or create tags..."></select>
+            <input type="hidden" name="new_tags" id="new_tags" value="">
+            <div id="new-tag-color-picker" class="d-none mt-2 p-2 border rounded color-picker-panel">
+                <label class="form-label text-white small mb-1">Pick a color for "<span id="new-tag-name"></span>"</label>
+                <div class="d-flex flex-wrap gap-2" id="color-palette">
+                    <!-- Colors injected by JS -->
+                </div>
+            </div>
+            <div id="new-tags-badges" class="d-flex flex-wrap gap-2 mt-2"></div>
         </div>
 
         <div class="mb-3">
@@ -29,115 +47,8 @@
     </form>
 </div>
 
-<style>
-/* Dark theme for EasyMDE — inline so it loads AFTER the CDN CSS */
-.EasyMDEContainer .editor-toolbar {
-    background-color: #2a475e !important;
-    border: 1px solid #4a6984 !important;
-    border-bottom: none !important;
-    border-radius: 6px 6px 0 0 !important;
-    padding: 6px !important;
-}
-
-.EasyMDEContainer .editor-toolbar button,
-.EasyMDEContainer .editor-toolbar .fa {
-    color: #c7d5e0 !important;
-}
-
-.EasyMDEContainer .editor-toolbar button:hover,
-.EasyMDEContainer .editor-toolbar button.active,
-.EasyMDEContainer .editor-toolbar .fa:hover,
-.EasyMDEContainer .editor-toolbar .active .fa {
-    background-color: #1b2838 !important;
-    color: #ffffff !important;
-}
-
-.EasyMDEContainer .editor-toolbar i.separator {
-    border-left-color: #4a6984 !important;
-    border-right-color: transparent !important;
-}
-
-.EasyMDEContainer .CodeMirror {
-    background-color: #1b2838 !important;
-    color: #c7d5e0 !important;
-    border: 1px solid #4a6984 !important;
-    border-radius: 0 0 6px 6px !important;
-}
-
-.EasyMDEContainer .CodeMirror-cursor {
-    border-left-color: #c7d5e0 !important;
-}
-
-.EasyMDEContainer .CodeMirror .CodeMirror-selected,
-.EasyMDEContainer .CodeMirror-focused .CodeMirror-selected {
-    background: #4a6984 !important;
-}
-
-.EasyMDEContainer .cm-s-easymde .CodeMirror-gutters {
-    background-color: #1b2838 !important;
-    border-right: 1px solid #4a6984 !important;
-}
-
-.EasyMDEContainer .cm-s-easymde .CodeMirror-linenumber {
-    color: #6a8098 !important;
-}
-
-/* Force single-row toolbar with consistent button sizes */
-.EasyMDEContainer .editor-toolbar {
-    white-space: nowrap !important;
-    overflow-x: auto !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-}
-
-.EasyMDEContainer .editor-toolbar > * {
-    flex-shrink: 0 !important;
-    display: inline-block !important;
-}
-
-/* Fix the table button which uses text instead of an icon */
-.EasyMDEContainer .editor-toolbar button {
-    min-width: 30px !important;
-    max-width: 30px !important;
-    height: 30px !important;
-    text-align: center !important;
-    line-height: 1 !important;
-    font-size: 14px !important;
-    overflow: hidden !important;
-    padding: 4px 6px !important;
-}
-
-/* Style the scrollbar for the toolbar */
-.EasyMDEContainer .editor-toolbar::-webkit-scrollbar {
-    height: 4px;
-}
-.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-track {
-    background: #1b2838;
-}
-.EasyMDEContainer .editor-toolbar::-webkit-scrollbar-thumb {
-    background: #4a6984;
-    border-radius: 2px;
-}
-
-/* Form inputs to match dark theme */
-#title.form-control {
-    background-color: #1b2838;
-    color: #c7d5e0;
-    border-color: #4a6984;
-}
-#title.form-control::placeholder {
-    color: #6a8098;
-}
-#title.form-control:focus {
-    background-color: #1b2838;
-    color: #c7d5e0;
-    border-color: #66c0f4;
-    box-shadow: 0 0 0 0.2rem rgba(102, 192, 244, 0.25);
-}
-</style>
-
 <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
     const easyMDE = new EasyMDE({
         element: document.getElementById('content'),
@@ -151,5 +62,125 @@
         ],
         status: false,
     });
+
+    // --- Tag selector with TomSelect ---
+    const colorPalette = ['#66c0f4', '#a4d007', '#ff6600', '#c7d5e0', '#ffd700', '#e91e63', '#9c27b0', '#4caf50', '#f44336', '#2196f3'];
+    let pendingNewTag = null;
+    let newTagsData = [];
+    let tagNameToColor = {};
+
+    // Initialize color palette swatches
+    const paletteContainer = document.getElementById('color-palette');
+    if (paletteContainer) {
+        colorPalette.forEach(function(color) {
+            var swatch = document.createElement('div');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = color;
+            swatch.dataset.color = color;
+            swatch.addEventListener('click', function() {
+                paletteContainer.querySelectorAll('.color-swatch').forEach(function(s) {
+                    s.classList.remove('selected');
+                });
+                swatch.classList.add('selected');
+                selectColor(this.dataset.color);
+            });
+            paletteContainer.appendChild(swatch);
+        });
+    }
+
+    function selectColor(color) {
+        if (pendingNewTag) {
+            var title = pendingNewTag;
+            tagNameToColor[title] = color;
+            updateNewTagsHidden();
+            tagSelect.removeItem(title);
+            addNewTagBadge(title, color);
+            document.getElementById('new-tag-color-picker').classList.add('d-none');
+            pendingNewTag = null;
+        }
+    }
+
+    function addNewTagBadge(title, color) {
+        var container = document.getElementById('new-tags-badges');
+        if (!container) return;
+        var badge = document.createElement('span');
+        badge.className = 'new-tag-badge';
+        badge.style.backgroundColor = color;
+        badge.style.color = '#fff';
+        badge.innerHTML = title + ' <span class="remove-new-tag" data-title="' + title.replace(/"/g, '&quot;') + '">&times;</span>';
+        badge.querySelector('.remove-new-tag').addEventListener('click', function() {
+            var t = this.dataset.title;
+            newTagsData = newTagsData.filter(function(nt) { return nt.title !== t; });
+            delete tagNameToColor[t];
+            updateNewTagsHidden();
+            this.parentElement.remove();
+        });
+        container.appendChild(badge);
+    }
+
+    function updateNewTagsHidden() {
+        newTagsData = [];
+        for (var title in tagNameToColor) {
+            if (tagNameToColor.hasOwnProperty(title)) {
+                newTagsData.push({title: title, color: tagNameToColor[title]});
+            }
+        }
+        document.getElementById('new_tags').value = JSON.stringify(newTagsData);
+    }
+
+    const tagSelect = new TomSelect('#tags-input', {
+        valueField: 'tag_id',
+        labelField: 'title',
+        searchField: 'title',
+        maxOptions: 20,
+        placeholder: 'Select or create tags...',
+        persist: false,
+        createOnBlur: true,
+        loadThrottle: 300,
+        load: function(query, callback) {
+            fetch('/api/tags/search?q=' + encodeURIComponent(query))
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    callback(data);
+                })
+                .catch(function() {
+                    callback();
+                });
+        },
+        create: function(input, callback) {
+            callback({
+                tag_id: input,
+                title: input,
+                color: tagNameToColor[input] || ''
+            });
+        },
+        render: {
+            option: function(data, escape) {
+                var color = data.color || '#4a6984';
+                return '<div class="d-flex align-items-center py-1">' +
+                    '<span class="badge me-2" style="background-color:' + escape(color) + ';color:#fff;">' + escape(data.title) + '</span>' +
+                    '</div>';
+            },
+            item: function(data, escape) {
+                var title = data.title || data.tag_id || '';
+                var color = tagNameToColor[title] || data.color || '#4a6984';
+                return '<span class="badge me-1" style="background-color:' + escape(color) + ';color:#fff;">' + escape(title) + '</span>';
+            }
+        },
+        onOptionAdd: function(value) {
+            document.getElementById('new-tag-name').textContent = value;
+            document.getElementById('new-tag-color-picker').classList.remove('d-none');
+            pendingNewTag = value;
+        }
+    });
+
+    // Pre-populate with existing tags
+    {% if post_tags %}
+    var existingTags = {{ post_tags | tojson }};
+    existingTags.forEach(function(tag) {
+        tagSelect.addOption(tag);
+        tagSelect.addItem(tag.tag_id);
+    });
+    {% endif %}
 </script>
 {% endblock %}
