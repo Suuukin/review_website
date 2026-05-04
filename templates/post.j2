@@ -1,4 +1,5 @@
 {% extends 'base.j2' %}
+{% from '_macros.j2' import tag_badges %}
 
 {% block content %}
     <div>
@@ -10,11 +11,7 @@
         {% endif %}
         <span class="badge badge-primary">{{ post['created'] }}</span>
         {% if tags %}
-        <div class="d-flex flex-wrap gap-2 my-2">
-            {% for tag in tags %}
-            <span class="tag-badge" style="background-color: {{ tag['color'] or '#4a6984' }};">{{ tag['title'] }}</span>
-            {% endfor %}
-        </div>
+        {{ tag_badges(tags) }}
         {% endif %}
         <p>{{ post_content|safe }}</p>
     </div>

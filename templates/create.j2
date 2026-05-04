@@ -1,309 +1,69 @@
 {% extends 'base.j2' %}
 
 {% block head %}
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+{% include 'components/_form_css.j2' %}
 {% endblock %}
 
 {% block content %}
-<div class="p-3">
-    <h1 class="mb-4">{% block title %} Create a New Post {% endblock %}</h1>
+<h1 class="mb-4">Create a New Post</h1>
 
-    <form method="post" id="create-form">
-        <!-- Post Type Selector -->
-        <div class="mb-4">
-            <label class="form-label">Post Type</label>
-            <div class="d-flex gap-3">
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="post_type" id="type-review" value="review">
-                    <label class="form-check-label" for="type-review">
-                        🎮 Game Review
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="post_type" id="type-blog" value="blog" checked>
-                    <label class="form-check-label" for="type-blog">
-                        📝 Blog Post
-                    </label>
-                </div>
+<form method="post" id="create-form">
+    <!-- Post Type Selector -->
+    <div class="mb-4">
+        <label class="form-label">Post Type</label>
+        <div class="d-flex gap-3">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="post_type" id="type-review" value="review">
+                <label class="form-check-label" for="type-review">🎮 Game Review</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="post_type" id="type-blog" value="blog" checked>
+                <label class="form-check-label" for="type-blog">📝 Blog Post</label>
             </div>
         </div>
+    </div>
 
-        <div class="mb-3" id="title-section">
-            <label for="title" class="form-label">Title</label>
-            <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
-                value="{{ request.form['title'] }}">
-        </div>
-
-        <!-- Game search — shown only for Game Review type -->
-        <div class="mb-3" id="game-search-section">
-            <label for="game-search" class="form-label">Game</label>
-            <input type="text" id="game-search" placeholder="Search for a Steam game…" class="form-control" autocomplete="off">
-            <input type="hidden" name="app_id" id="app_id" value="">
-            <input type="hidden" name="store" id="store" value="steam">
-            <div id="game-selected" class="d-none mt-2 p-2 border rounded d-flex align-items-center gap-3">
-                <img id="selected-game-image" src="" alt="" class="rounded" style="width: 92px; height: 43px; object-fit: cover;">
-                <div>
-                    <strong id="selected-game-name" class="text-white"></strong>
-                    <br>
-                    <small class="text-muted">App ID: <span id="selected-game-appid"></span></small>
-                </div>
-                <button type="button" id="clear-game" class="btn btn-sm btn-outline-secondary ms-auto">Remove</button>
+    <!-- Game search — shown only for Game Review type -->
+    <div class="mb-3" id="game-search-section">
+        <label for="game-search" class="form-label">Game</label>
+        <input type="text" id="game-search" placeholder="Search for a Steam game…" class="form-control" autocomplete="off">
+        <input type="hidden" name="app_id" id="app_id" value="">
+        <input type="hidden" name="store" id="store" value="steam">
+        <div id="game-selected" class="d-none mt-2 p-2 border rounded d-flex align-items-center gap-3">
+            <img id="selected-game-image" src="" alt="" class="rounded" style="width: 92px; height: 43px; object-fit: cover;">
+            <div>
+                <strong id="selected-game-name" class="text-white"></strong>
+                <br>
+                <small class="text-muted">App ID: <span id="selected-game-appid"></span></small>
             </div>
+            <button type="button" id="clear-game" class="btn btn-sm btn-outline-secondary ms-auto">Remove</button>
         </div>
+    </div>
 
-        <!-- Tag selection -->
-        <div class="mb-3" id="tags-section">
-            <label for="tags-input" class="form-label">Tags</label>
-            <select id="tags-input" name="tags" multiple placeholder="Select or create tags..."></select>
-            <input type="hidden" name="new_tags" id="new_tags" value="">
-            <div id="new-tag-color-picker" class="d-none mt-2 p-2 border rounded">
-                <label class="form-label text-white small mb-1">Pick a color for "<span id="new-tag-name"></span>"</label>
-                <div class="d-flex flex-wrap gap-2" id="color-palette">
-                    <!-- Colors injected by JS -->
-                </div>
-            </div>
-            <div id="new-tags-badges" class="d-flex flex-wrap gap-2 mt-2"></div>
-        </div>
+    <!-- Title section — shown only for Blog Post type -->
+    <div class="mb-3" id="title-section" style="display: none;">
+        <label for="title" class="form-label">Title</label>
+        <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
+            value="{{ request.form['title'] }}">
+    </div>
 
-        <div class="mb-3">
-            <label for="content" class="form-label">Content (Markdown)</label>
-            <textarea name="content" id="content" class="form-control">{{ request.form['content'] }}</textarea>
-        </div>
+    {% include 'components/_tags_form.j2' %}
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-    </form>
-</div>
+    <div class="mb-3">
+        <label for="content" class="form-label">Content (Markdown)</label>
+        <textarea name="content" id="content" class="form-control">{{ request.form['content'] }}</textarea>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-<script>
-    // EasyMDE initialization
-    const easyMDE = new EasyMDE({
-        element: document.getElementById('content'),
-        spellChecker: false,
-        placeholder: 'Write your review in Markdown...',
-        toolbar: [
-            'bold', 'italic', 'heading', '|',
-            'quote', 'unordered-list', 'ordered-list', '|',
-            'code', 'table', '|',
-            'guide'
-        ],
-        status: false,
-    });
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>
+{% endblock %}
 
-    // TomSelect game search — cache loaded games for use in onChange
-    let gameCache = {};
-
-    const gameSearch = new TomSelect('#game-search', {
-        valueField: 'app_id',
-        labelField: 'name',
-        searchField: 'name',
-        maxOptions: 20,
-        placeholder: 'Search for a Steam game…',
-        loadThrottle: 300,
-        shouldLoad: function(query) {
-            return query.length >= 2;
-        },
-        load: function(query, callback) {
-            fetch('/api/games/search?q=' + encodeURIComponent(query))
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(function(g) { gameCache[g.app_id] = g; });
-                    callback(data);
-                })
-                .catch(function() {
-                    callback();
-                });
-        },
-        render: {
-            option: function(data, escape) {
-                var img = data.capsule_image
-                    ? '<img src="' + escape(data.capsule_image) + '" alt="" class="me-2" style="width:46px;height:22px;object-fit:cover;border-radius:3px;vertical-align:middle;">'
-                    : '';
-                var badge = data.has_review
-                    ? ' <span class="badge bg-warning text-dark ms-auto">Already reviewed</span>'
-                    : '';
-                return '<div class="d-flex align-items-center py-1">' +
-                    img +
-                    '<span>' + escape(data.name) + '</span>' +
-                    badge +
-                    '</div>';
-            },
-            item: function(data, escape) {
-                return '<span>' + escape(data.name) + '</span>';
-            }
-        },
-        onChange: function(value) {
-            if (value && gameCache[value]) {
-                var g = gameCache[value];
-                document.getElementById('app_id').value = value;
-                document.getElementById('store').value = 'steam';
-                document.getElementById('selected-game-name').textContent = g.name;
-                document.getElementById('selected-game-image').src = g.header_image;
-                document.getElementById('selected-game-appid').textContent = value;
-                document.getElementById('game-selected').classList.remove('d-none');
-            }
-        }
-    });
-
-    // Handle clearing the game selection
-    document.getElementById('clear-game').addEventListener('click', function() {
-        gameSearch.clear();
-        document.getElementById('app_id').value = '';
-        document.getElementById('store').value = 'steam';
-        document.getElementById('game-selected').classList.add('d-none');
-    });
-
-    // Post type toggle — show/hide game search and title, update store field
-    var typeRadios = document.querySelectorAll('input[name="post_type"]');
-    var gameSection = document.getElementById('game-search-section');
-    var titleSection = document.getElementById('title-section');
-
-    function togglePostType() {
-        var isReview = document.getElementById('type-review').checked;
-        if (isReview) {
-            gameSection.style.display = 'block';
-            titleSection.style.display = 'none';
-            document.getElementById('store').value = 'steam';
-        } else {
-            gameSection.style.display = 'none';
-            titleSection.style.display = 'block';
-            // Clear any selected game when switching to blog post
-            gameSearch.clear();
-            document.getElementById('app_id').value = '';
-            document.getElementById('store').value = 'other';
-            document.getElementById('game-selected').classList.add('d-none');
-        }
-    }
-
-    typeRadios.forEach(function(r) {
-        r.addEventListener('change', togglePostType);
-    });
-
-    // Ensure initial state matches the default checked radio
-    togglePostType();
-
-    // --- Tag selector with TomSelect ---
-    const colorPalette = ['#66c0f4', '#a4d007', '#ff6600', '#c7d5e0', '#ffd700', '#e91e63', '#9c27b0', '#4caf50', '#f44336', '#2196f3'];
-    let pendingNewTag = null;
-    let newTagsData = [];
-    let tagNameToColor = {};
-
-    // Initialize color palette swatches
-    const paletteContainer = document.getElementById('color-palette');
-    colorPalette.forEach(function(color) {
-        var swatch = document.createElement('div');
-        swatch.className = 'color-swatch';
-        swatch.style.backgroundColor = color;
-        swatch.dataset.color = color;
-        swatch.addEventListener('click', function() {
-            // Remove selected class from all swatches
-            paletteContainer.querySelectorAll('.color-swatch').forEach(function(s) {
-                s.classList.remove('selected');
-            });
-            swatch.classList.add('selected');
-            selectColor(this.dataset.color);
-        });
-        paletteContainer.appendChild(swatch);
-    });
-
-    function selectColor(color) {
-        if (pendingNewTag) {
-            var title = pendingNewTag;
-            // Store color for this new tag
-            tagNameToColor[title] = color;
-            updateNewTagsHidden();
-            // Remove from TomSelect (so tags[] only has existing tag_ids)
-            tagSelect.removeItem(title);
-            // Add badge below the input to show it's selected
-            addNewTagBadge(title, color);
-            // Hide the color picker
-            document.getElementById('new-tag-color-picker').classList.add('d-none');
-            pendingNewTag = null;
-        }
-    }
-
-    function addNewTagBadge(title, color) {
-        var container = document.getElementById('new-tags-badges');
-        var badge = document.createElement('span');
-        badge.className = 'new-tag-badge';
-        badge.style.backgroundColor = color;
-        badge.style.color = '#fff';
-        badge.innerHTML = title + ' <span class="remove-new-tag" data-title="' + title.replace(/"/g, '&quot;') + '">&times;</span>';
-        badge.querySelector('.remove-new-tag').addEventListener('click', function() {
-            var t = this.dataset.title;
-            // Remove from new tags data
-            newTagsData = newTagsData.filter(function(nt) { return nt.title !== t; });
-            delete tagNameToColor[t];
-            updateNewTagsHidden();
-            // Remove the badge
-            this.parentElement.remove();
-        });
-        container.appendChild(badge);
-    }
-
-    function updateNewTagsHidden() {
-        newTagsData = [];
-        for (var title in tagNameToColor) {
-            if (tagNameToColor.hasOwnProperty(title)) {
-                newTagsData.push({title: title, color: tagNameToColor[title]});
-            }
-        }
-        document.getElementById('new_tags').value = JSON.stringify(newTagsData);
-    }
-
-    const tagSelect = new TomSelect('#tags-input', {
-        valueField: 'tag_id',
-        labelField: 'title',
-        searchField: 'title',
-        maxOptions: 20,
-        placeholder: 'Select or create tags...',
-        persist: false,
-        createOnBlur: true,
-        openOnFocus: true,
-        preload: 'focus',
-        loadThrottle: 300,
-        load: function(query, callback) {
-            fetch('/api/tags/search?q=' + encodeURIComponent(query))
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    callback(data);
-                })
-                .catch(function() {
-                    callback();
-                });
-        },
-        create: function(input, callback) {
-            callback({
-                tag_id: input,
-                title: input,
-                color: tagNameToColor[input] || ''
-            });
-        },
-        render: {
-            option: function(data, escape) {
-                var color = data.color || '#4a6984';
-                return '<div class="d-flex align-items-center py-1">' +
-                    '<span class="badge me-2" style="background-color:' + escape(color) + ';color:#fff;">' + escape(data.title) + '</span>' +
-                    '</div>';
-            },
-            item: function(data, escape) {
-                // If this is a new tag (user-created), it won't have a numeric tag_id
-                // Show it with color from our map or default
-                var title = data.title || data.tag_id || '';
-                var color = tagNameToColor[title] || data.color || '#4a6984';
-                return '<span class="badge me-1" style="background-color:' + escape(color) + ';color:#fff;">' + escape(title) + '</span>';
-            }
-        },
-        onOptionAdd: function(value) {
-            // value is the typed text that the user wants to create as a new tag
-            // Show the color picker so they can choose a color
-            document.getElementById('new-tag-name').textContent = value;
-            document.getElementById('new-tag-color-picker').classList.remove('d-none');
-            pendingNewTag = value;
-        }
-    });
-</script>
+{% block scripts %}
+{% include 'components/_form_js.j2' %}
+<script src="{{ url_for('static', filename='js/easymde_init.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tag_select.js') }}"></script>
+<script src="{{ url_for('static', filename='js/game_search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/post_type_toggle.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,11 @@
+<!-- Tag selection -->
+<div class="mb-3" id="tags-section">
+    <label for="tags-input" class="form-label">Tags</label>
+    <select id="tags-input" name="tags" multiple placeholder="Select or create tags..."></select>
+    <input type="hidden" name="new_tags" id="new_tags" value="">
+    <div id="new-tag-color-picker" class="d-none mt-2 p-2 border rounded">
+        <label class="form-label text-white small mb-1">Pick a color for "<span id="new-tag-name"></span>"</label>
+        <div class="d-flex flex-wrap gap-2" id="color-palette"></div>
+    </div>
+    <div id="new-tags-badges" class="d-flex flex-wrap gap-2 mt-2"></div>
+</div>

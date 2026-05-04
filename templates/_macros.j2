@@ -1,0 +1,17 @@
+{# Reusable Jinja macros #}
+
+{# Renders a single tag badge #}
+{% macro tag_badge(tag) %}
+<span class="tag-badge" style="background-color: {{ tag['color'] or '#4a6984' }};">{{ tag['title'] }}</span>
+{% endmacro %}
+
+{# Renders a list of tag badges, optionally wrapped in a flex container #}
+{% macro tag_badges(tags, wrapper_class="d-flex flex-wrap gap-2 mb-2") %}
+{% if tags %}
+{% if wrapper_class %}<div class="{{ wrapper_class }}">{% endif %}
+    {% for tag in tags %}
+    {{ tag_badge(tag) }}
+    {% endfor %}
+{% if wrapper_class %}</div>{% endif %}
+{% endif %}
+{% endmacro %}

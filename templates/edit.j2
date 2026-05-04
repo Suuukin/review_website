@@ -1,188 +1,50 @@
 {% extends 'base.j2' %}
 
 {% block head %}
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+{% include 'components/_form_css.j2' %}
 {% endblock %}
 
 {% block content %}
-<div class="p-3">
-    <h1 class="mb-4">{% block title %} Edit "{{ post['title'] }}" {% endblock %}</h1>
+<h1 class="mb-4">Edit "{{ post['title'] }}"</h1>
 
-    <form method="post" id="edit-form">
-        <div class="mb-3">
-            <label for="title" class="form-label">Title</label>
-            <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
-                value="{{ request.form['title'] or post['title'] }}">
-        </div>
+<form method="post" id="edit-form">
+    <div class="mb-3">
+        <label for="title" class="form-label">Title</label>
+        <input type="text" name="title" id="title" placeholder="Post title" class="form-control"
+            value="{{ request.form['title'] or post['title'] }}">
+    </div>
 
-        <!-- Tag selection -->
-        <div class="mb-3" id="tags-section">
-            <label for="tags-input" class="form-label">Tags</label>
-            <select id="tags-input" name="tags" multiple placeholder="Select or create tags..."></select>
-            <input type="hidden" name="new_tags" id="new_tags" value="">
-            <div id="new-tag-color-picker" class="d-none mt-2 p-2 border rounded">
-                <label class="form-label text-white small mb-1">Pick a color for "<span id="new-tag-name"></span>"</label>
-                <div class="d-flex flex-wrap gap-2" id="color-palette">
-                    <!-- Colors injected by JS -->
-                </div>
-            </div>
-            <div id="new-tags-badges" class="d-flex flex-wrap gap-2 mt-2"></div>
-        </div>
+    {% include 'components/_tags_form.j2' %}
 
-        <div class="mb-3">
-            <label for="content" class="form-label">Content (Markdown)</label>
-            <textarea name="content" id="content" class="form-control">{{ request.form['content'] or post['content'] }}</textarea>
-        </div>
+    <div class="mb-3">
+        <label for="content" class="form-label">Content (Markdown)</label>
+        <textarea name="content" id="content" class="form-control">{{ request.form['content'] or post['content'] }}</textarea>
+    </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-    </form>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>
 
-    <hr>
-    {% set delete_id = post['app_id'] if post['store'] == 'steam' else post['id'] %}
-    <form action="{{ url_for('delete', id=delete_id, store=post['store']) }}" method="POST">
-        <input type="submit" value="Delete Post" class="btn btn-danger btn-sm"
-            onclick="return confirm('Are you sure you want to delete this post?')">
-    </form>
-</div>
+<hr>
+{% set delete_id = post['app_id'] if post['store'] == 'steam' else post['id'] %}
+<form action="{{ url_for('delete', id=delete_id, store=post['store']) }}" method="POST">
+    <input type="submit" value="Delete Post" class="btn btn-danger btn-sm"
+        onclick="return confirm('Are you sure you want to delete this post?')">
+</form>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+{% block scripts %}
+{% include 'components/_form_js.j2' %}
+<script src="{{ url_for('static', filename='js/easymde_init.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tag_select.js') }}"></script>
+{% if post_tags %}
 <script>
-    const easyMDE = new EasyMDE({
-        element: document.getElementById('content'),
-        spellChecker: false,
-        placeholder: 'Write your review in Markdown...',
-        toolbar: [
-            'bold', 'italic', 'heading', '|',
-            'quote', 'unordered-list', 'ordered-list', '|',
-            'code', 'table', '|',
-            'guide'
-        ],
-        status: false,
-    });
-
-    // --- Tag selector with TomSelect ---
-    const colorPalette = ['#66c0f4', '#a4d007', '#ff6600', '#c7d5e0', '#ffd700', '#e91e63', '#9c27b0', '#4caf50', '#f44336', '#2196f3'];
-    let pendingNewTag = null;
-    let newTagsData = [];
-    let tagNameToColor = {};
-
-    // Initialize color palette swatches
-    const paletteContainer = document.getElementById('color-palette');
-    if (paletteContainer) {
-        colorPalette.forEach(function(color) {
-            var swatch = document.createElement('div');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = color;
-            swatch.dataset.color = color;
-            swatch.addEventListener('click', function() {
-                paletteContainer.querySelectorAll('.color-swatch').forEach(function(s) {
-                    s.classList.remove('selected');
-                });
-                swatch.classList.add('selected');
-                selectColor(this.dataset.color);
-            });
-            paletteContainer.appendChild(swatch);
-        });
-    }
-
-    function selectColor(color) {
-        if (pendingNewTag) {
-            var title = pendingNewTag;
-            tagNameToColor[title] = color;
-            updateNewTagsHidden();
-            tagSelect.removeItem(title);
-            addNewTagBadge(title, color);
-            document.getElementById('new-tag-color-picker').classList.add('d-none');
-            pendingNewTag = null;
-        }
-    }
-
-    function addNewTagBadge(title, color) {
-        var container = document.getElementById('new-tags-badges');
-        if (!container) return;
-        var badge = document.createElement('span');
-        badge.className = 'new-tag-badge';
-        badge.style.backgroundColor = color;
-        badge.style.color = '#fff';
-        badge.innerHTML = title + ' <span class="remove-new-tag" data-title="' + title.replace(/"/g, '&quot;') + '">&times;</span>';
-        badge.querySelector('.remove-new-tag').addEventListener('click', function() {
-            var t = this.dataset.title;
-            newTagsData = newTagsData.filter(function(nt) { return nt.title !== t; });
-            delete tagNameToColor[t];
-            updateNewTagsHidden();
-            this.parentElement.remove();
-        });
-        container.appendChild(badge);
-    }
-
-    function updateNewTagsHidden() {
-        newTagsData = [];
-        for (var title in tagNameToColor) {
-            if (tagNameToColor.hasOwnProperty(title)) {
-                newTagsData.push({title: title, color: tagNameToColor[title]});
-            }
-        }
-        document.getElementById('new_tags').value = JSON.stringify(newTagsData);
-    }
-
-    const tagSelect = new TomSelect('#tags-input', {
-        valueField: 'tag_id',
-        labelField: 'title',
-        searchField: 'title',
-        maxOptions: 20,
-        placeholder: 'Select or create tags...',
-        persist: false,
-        createOnBlur: true,
-        openOnFocus: true,
-        preload: 'focus',
-        loadThrottle: 300,
-        load: function(query, callback) {
-            fetch('/api/tags/search?q=' + encodeURIComponent(query))
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    callback(data);
-                })
-                .catch(function() {
-                    callback();
-                });
-        },
-        create: function(input, callback) {
-            callback({
-                tag_id: input,
-                title: input,
-                color: tagNameToColor[input] || ''
-            });
-        },
-        render: {
-            option: function(data, escape) {
-                var color = data.color || '#4a6984';
-                return '<div class="d-flex align-items-center py-1">' +
-                    '<span class="badge me-2" style="background-color:' + escape(color) + ';color:#fff;">' + escape(data.title) + '</span>' +
-                    '</div>';
-            },
-            item: function(data, escape) {
-                var title = data.title || data.tag_id || '';
-                var color = tagNameToColor[title] || data.color || '#4a6984';
-                return '<span class="badge me-1" style="background-color:' + escape(color) + ';color:#fff;">' + escape(title) + '</span>';
-            }
-        },
-        onOptionAdd: function(value) {
-            document.getElementById('new-tag-name').textContent = value;
-            document.getElementById('new-tag-color-picker').classList.remove('d-none');
-            pendingNewTag = value;
-        }
-    });
-
-    // Pre-populate with existing tags
-    {% if post_tags %}
     var existingTags = {{ post_tags | tojson }};
     existingTags.forEach(function(tag) {
         tagSelect.addOption(tag);
         tagSelect.addItem(tag.tag_id);
     });
-    {% endif %}
 </script>
+{% endif %}
 {% endblock %}
