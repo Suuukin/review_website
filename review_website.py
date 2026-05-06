@@ -135,7 +135,7 @@ def post(post_id, store):
 def index():
     conn = get_db_connection()
     post_sql = conn.execute(
-        "SELECT posts.*, app_info.extra FROM posts LEFT JOIN app_info ON posts.app_id=app_info.app_id"
+        "SELECT posts.*, app_info.extra FROM posts LEFT JOIN app_info ON posts.app_id=app_info.app_id ORDER BY posts.created DESC"
     ).fetchall()
 
     posts = []
