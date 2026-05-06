@@ -12,6 +12,7 @@ from flask import (
 )
 import sqlite3
 from werkzeug.exceptions import abort
+import re
 import json
 import os
 import markdown
@@ -99,6 +100,14 @@ def render_markdown(text):
     )
 
 
+def parse_search_query(query):
+    """Parse a search query into a list of tokens, respecting quoted phrases."""
+    return [
+        matched.group(1) or matched.group(2)
+        for matched in re.finditer(r'"([^"]+)"|(\S+)', query)
+    ]
+
+
 @app.route("/<string:store>/<int:post_id>")
 def post(post_id, store):
     post, app_info = get_post(post_id, store)
@@ -133,10 +142,37 @@ def post(post_id, store):
 
 @app.route("/")
 def index():
+    query = request.args.get("q", "").strip()
+    tokens = parse_search_query(query)
+
     conn = get_db_connection()
-    post_sql = conn.execute(
-        "SELECT posts.*, app_info.extra FROM posts LEFT JOIN app_info ON posts.app_id=app_info.app_id ORDER BY posts.created DESC"
-    ).fetchall()
+
+    if tokens:
+        conditions = []
+        params = []
+        for token in tokens:
+            like = f"%{token}%"
+            conditions.append(
+                "(posts.title LIKE ? OR posts.id IN (SELECT posts_tags.post_id FROM posts_tags "
+                "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title LIKE ?))"
+            )
+            params.extend([like, like])
+
+        where_clause = " AND ".join(conditions)
+        sql = f"""
+            SELECT posts.*, app_info.extra
+            FROM posts
+            LEFT JOIN app_info ON posts.app_id = app_info.app_id
+            WHERE {where_clause}
+            ORDER BY posts.created DESC
+        """
+        post_sql = conn.execute(sql, params).fetchall()
+    else:
+        post_sql = conn.execute(
+            "SELECT posts.*, app_info.extra FROM posts "
+            "LEFT JOIN app_info ON posts.app_id = app_info.app_id "
+            "ORDER BY posts.created DESC"
+        ).fetchall()
 
     posts = []
     for row in post_sql:

@@ -3,6 +3,15 @@
 
 {% block content %}
 <h1>Reviews</h1>
+<form method="get" action="{{ url_for('index') }}" class="mb-4">
+  <div class="input-group">
+    <input type="search" name="q" class="form-control"
+           placeholder="Search by title or tag…"
+           value="{{ request.args.get('q', '') }}">
+    <button class="btn btn-outline-light" type="submit">Search</button>
+  </div>
+</form>
+{% if posts %}
 {% for post in posts %}
     {% if post["store"] == "steam" %}
         {% set id = post["app_id"] %}
@@ -47,4 +56,7 @@
 
     <hr>
 {% endfor %}
+{% else %}
+<p class="text-muted">No reviews match your search.</p>
+{% endif %}
 {% endblock %}
