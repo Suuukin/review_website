@@ -63,9 +63,16 @@ def login_required(f):
     return decorated_function
 
 
+def _sql_regex(pattern, text):
+    if text is None:
+        return 0
+    return 1 if re.search(pattern, text) else 0
+
+
 def get_db_connection():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
+    conn.create_function("regexp", 2, _sql_regex)
     return conn
 
 
@@ -101,11 +108,14 @@ def render_markdown(text):
 
 
 def parse_search_query(query):
-    """Parse a search query into a list of tokens, respecting quoted phrases."""
-    return [
-        matched.group(1) or matched.group(2)
-        for matched in re.finditer(r'"([^"]+)"|(\S+)', query)
-    ]
+    """Parse a search query into a list of (token, is_quoted) tuples."""
+    results = []
+    for matched in re.finditer(r'"([^"]+)"|(\S+)', query):
+        if matched.group(1):  # quoted phrase
+            results.append((matched.group(1), True))
+        else:  # bare word
+            results.append((matched.group(2), False))
+    return results
 
 
 @app.route("/<string:store>/<int:post_id>")
@@ -150,13 +160,23 @@ def index():
     if tokens:
         conditions = []
         params = []
-        for token in tokens:
-            like = f"%{token}%"
-            conditions.append(
-                "(posts.title LIKE ? OR posts.id IN (SELECT posts_tags.post_id FROM posts_tags "
-                "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title LIKE ?))"
-            )
-            params.extend([like, like])
+        for token, is_quoted in tokens:
+            if is_quoted:
+                # Quoted phrase — match anywhere as a substring
+                like = f"%{token}%"
+                conditions.append(
+                    "(posts.title LIKE ? OR posts.id IN (SELECT posts_tags.post_id FROM posts_tags "
+                    "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title LIKE ?))"
+                )
+                params.extend([like, like])
+            else:
+                # Unquoted word — match from the start of a word (word boundary)
+                pattern = r"(?i)\b" + re.escape(token)
+                conditions.append(
+                    "(posts.title REGEXP ? OR posts.id IN (SELECT posts_tags.post_id FROM posts_tags "
+                    "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title REGEXP ?))"
+                )
+                params.extend([pattern, pattern])
 
         where_clause = " AND ".join(conditions)
         sql = f"""
