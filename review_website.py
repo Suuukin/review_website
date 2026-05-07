@@ -118,6 +118,24 @@ def parse_search_query(query):
     return results
 
 
+@app.template_filter("highlight")
+def highlight_filter(text, query):
+    """Wrap search term matches in <mark> tags."""
+    if not query or not text:
+        return text
+    tokens = parse_search_query(query)
+    patterns = []
+    for token, is_quoted in tokens:
+        if is_quoted:
+            patterns.append(re.escape(token))
+        else:
+            patterns.append(r"\b" + re.escape(token))
+    if not patterns:
+        return text
+    combined = "(?i)(" + "|".join(patterns) + ")"
+    return re.sub(combined, r"<mark>\1</mark>", text)
+
+
 @app.route("/<string:store>/<int:post_id>")
 def post(post_id, store):
     post, app_info = get_post(post_id, store)

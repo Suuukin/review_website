@@ -9,8 +9,17 @@
            placeholder="Search by title or tag…"
            value="{{ request.args.get('q', '') | e }}">
     <button class="btn btn-outline-light" type="submit">Search</button>
+    {% if request.args.get('q') %}
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">×</a>
+    {% endif %}
   </div>
 </form>
+{% if request.args.get('q') %}
+<p class="text-muted mb-3">
+  {{ posts | length }} result{% if posts | length != 1 %}s{% endif %}
+  for "{{ request.args.get('q') | e }}"
+</p>
+{% endif %}
 {% if posts %}
 {% for post in posts %}
     {% if post["store"] == "steam" %}
@@ -28,18 +37,18 @@
         <a href=" {{url_for('post', post_id=id, store=post['store'])}}"><img
             src="{{image}}" alt="Game Image"></a>
         <a href=" {{url_for('post', post_id=id, store=post['store'])}}"><h2 
-            class="p-2" style="display: inline-block">{{ post['title'] }}</h2></a>
+            class="p-2" style="display: inline-block">{{ post['title'] | highlight(request.args.get('q', '')) }}</h2></a>
     </div>
 
     {% if genres != None %}
         {% for description in genres %}
-            <span class="badge badge-secondary">{{description}}</span>
+            <span class="badge badge-secondary">{{ description | highlight(request.args.get('q', '')) }}</span>
         {% endfor %}
     {% endif %}
 
     {% if tags %}
         <div class="vr"></div>
-        {{ tag_badges(tags, wrapper_class="") }}
+        {{ tag_badges(tags, wrapper_class="", query=request.args.get('q', '')) }}
     {% endif %}
 
     <span class="edit badge badge-primary float-end">{{ post['created'] }}</span>
@@ -59,4 +68,20 @@
 {% else %}
 <p class="text-muted">No reviews match your search.</p>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var input = document.querySelector('input[name="q"]');
+  if (!input) return;
+
+  // Auto-focus and place cursor at end if returning from a search
+  if (input.value) {
+    input.focus();
+    var len = input.value.length;
+    input.setSelectionRange(len, len);
+  }
+})();
+</script>
 {% endblock %}
