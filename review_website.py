@@ -166,17 +166,19 @@ def index():
                 like = f"%{token}%"
                 conditions.append(
                     "(posts.title LIKE ? OR posts.id IN (SELECT posts_tags.post_id FROM posts_tags "
-                    "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title LIKE ?))"
+                    "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title LIKE ?) "
+                    "OR app_info.genres LIKE ?)"
                 )
-                params.extend([like, like])
+                params.extend([like, like, like])
             else:
                 # Unquoted word — match from the start of a word (word boundary)
                 pattern = r"(?i)\b" + re.escape(token)
                 conditions.append(
                     "(posts.title REGEXP ? OR posts.id IN (SELECT posts_tags.post_id FROM posts_tags "
-                    "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title REGEXP ?))"
+                    "JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE tags.title REGEXP ?) "
+                    "OR app_info.genres REGEXP ?)"
                 )
-                params.extend([pattern, pattern])
+                params.extend([pattern, pattern, pattern])
 
         where_clause = " AND ".join(conditions)
         sql = f"""
