@@ -1,0 +1,20 @@
+{% extends 'base.j2' %}
+
+{% block content %}
+<h1 class="mb-4">Tags</h1>
+
+{% if tags %}
+<div class="d-flex flex-wrap gap-3">
+  {% for tag in tags %}
+  <a href="{{ url_for('index') }}?q={{ tag['title'] | urlencode }}"
+     class="tag-badge"
+     style="background-color: {{ tag['color'] or '#4a6984' }}; text-decoration: none;">
+    {{ tag['title'] }}
+    <span class="ms-1 opacity-75">({{ tag['usage_count'] }})</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No tags have been created yet.</p>
+{% endif %}
+{% endblock %}
