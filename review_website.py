@@ -118,6 +118,52 @@ def parse_search_query(query):
     return results
 
 
+def build_pagination(current_page, total_pages):
+    """Build a pagination data structure for the template.
+    Returns a dict with:
+      - page: current page number
+      - total_pages: total number of pages
+      - prev_page: previous page number, or None
+      - next_page: next page number, or None
+      - pages: list of page elements — each is an int (page number) or None (ellipsis)
+    """
+    if total_pages <= 1:
+        return None
+
+    def _get_range():
+        """Return a list where each entry is an int (page) or None (ellipsis)."""
+        # Show at most 7 items: first, last, current +/- 2, and ellipses as needed
+        pages = []
+        # Always include page 1
+        pages.append(1)
+
+        start = max(2, current_page - 2)
+        end = min(total_pages - 1, current_page + 2)
+
+        if start > 2:
+            pages.append(None)  # ellipsis
+
+        for p in range(start, end + 1):
+            pages.append(p)
+
+        if end < total_pages - 1:
+            pages.append(None)  # ellipsis
+
+        # Always include last page if > 1
+        if total_pages > 1:
+            pages.append(total_pages)
+
+        return pages
+
+    return {
+        "page": current_page,
+        "total_pages": total_pages,
+        "prev_page": current_page - 1 if current_page > 1 else None,
+        "next_page": current_page + 1 if current_page < total_pages else None,
+        "pages": _get_range(),
+    }
+
+
 @app.template_filter("highlight")
 def highlight_filter(text, query):
     """Wrap search term matches in <mark> tags."""
@@ -173,6 +219,11 @@ def index():
     query = request.args.get("q", "").strip()
     tokens = parse_search_query(query)
 
+    per_page = 20
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+
     conn = get_db_connection()
 
     if tokens:
@@ -199,19 +250,38 @@ def index():
                 params.extend([pattern, pattern, pattern])
 
         where_clause = " AND ".join(conditions)
+
+        # Count total matching posts
+        count_sql = f"""
+            SELECT COUNT(*) FROM posts
+            LEFT JOIN app_info ON posts.app_id = app_info.app_id
+            WHERE {where_clause}
+        """
+        total = conn.execute(count_sql, params).fetchone()[0]
+    else:
+        total = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * per_page
+
+    if tokens:
         sql = f"""
             SELECT posts.*, app_info.extra
             FROM posts
             LEFT JOIN app_info ON posts.app_id = app_info.app_id
             WHERE {where_clause}
             ORDER BY posts.created DESC
+            LIMIT ? OFFSET ?
         """
-        post_sql = conn.execute(sql, params).fetchall()
+        post_sql = conn.execute(sql, params + [per_page, offset]).fetchall()
     else:
         post_sql = conn.execute(
             "SELECT posts.*, app_info.extra FROM posts "
             "LEFT JOIN app_info ON posts.app_id = app_info.app_id "
-            "ORDER BY posts.created DESC"
+            "ORDER BY posts.created DESC LIMIT ? OFFSET ?",
+            (per_page, offset),
         ).fetchall()
 
     posts = []
@@ -232,7 +302,23 @@ def index():
 
     conn.close()
 
-    return render_template("index.j2", posts=posts)
+    pagination = build_pagination(page, total_pages)
+
+    return render_template("index.j2", posts=posts, pagination=pagination)
+
+
+@app.route("/tags")
+def tags_page():
+    conn = get_db_connection()
+    tags = conn.execute(
+        """SELECT tags.*, COUNT(posts_tags.post_id) as usage_count
+           FROM tags
+           LEFT JOIN posts_tags ON tags.tag_id = posts_tags.post_id
+           GROUP BY tags.tag_id
+           ORDER BY usage_count DESC, tags.title ASC"""
+    ).fetchall()
+    conn.close()
+    return render_template("tags.j2", tags=tags)
 
 
 @app.route("/about")

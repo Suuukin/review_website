@@ -27,6 +27,9 @@
           <li class="nav-item active">
             <a class="nav-link" href="{{url_for('about_page')}}">About</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{url_for('tags_page')}}">Tags</a>
+          </li>
 	  {% if session.get('logged_in') %}
           <li class="nav-item">
             <a class="nav-link" href="{{url_for('create')}}">New Post</a>
@@ -52,10 +55,10 @@
 
   <div class="container_fluid fullscreen bg-dark">
     <div class="row h-100 m-0">
-      <div class="col p-0 steam_blue">
+      <div class="d-none d-lg-block col-lg-1 p-0 steam_blue">
         {% block left_panel %} {% endblock %}
       </div>
-      <div class="col-8">
+      <div class="col-12 col-lg-10">
         <div class="container bg-dark">
           {% for message in get_flashed_messages() %}
           <div class="alert alert-danger">{{ message }}</div>
@@ -63,7 +66,7 @@
           {% block content %} {% endblock %}
         </div>
       </div>
-      <div class="col p-0 steam_blue">
+      <div class="d-none d-lg-block col-lg-1 p-0 steam_blue">
         {% block right_panel %} {% endblock %}
       </div>
     </div>

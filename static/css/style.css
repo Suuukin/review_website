@@ -136,3 +136,27 @@ a:active {
     color: #fff;
     line-height: 1.4;
 }
+
+/* ─── Responsive Adjustments ─── */
+
+@media (max-width: 991.98px) {
+    p {
+        max-width: 100%;
+        font-size: 18px;
+    }
+
+    .fullscreen {
+        height: auto;
+        min-height: 100%;
+    }
+
+    .capsule_image {
+        width: 100%;
+        height: auto;
+        max-width: 460px;
+    }
+
+    .container_fluid.fullscreen .row {
+        margin: 0;
+    }
+}
