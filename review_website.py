@@ -326,6 +326,62 @@ def tags_page():
     return render_template("tags.j2", tags=tags)
 
 
+@app.route("/tags/<int:tag_id>/edit", methods=("POST",))
+@login_required
+def edit_tag(tag_id):
+    title = request.form.get("title", "").strip()
+    color = request.form.get("color", "").strip()
+
+    if not title:
+        flash("Tag title is required.")
+        return redirect(url_for("tags_page"))
+
+    conn = get_db_connection()
+    conn.execute(
+        "UPDATE tags SET title = ?, color = ? WHERE tag_id = ?",
+        (title, color, tag_id),
+    )
+    conn.commit()
+    conn.close()
+    flash(f'Tag renamed to "{title}".')
+    return redirect(url_for("tags_page"))
+
+
+@app.route("/tags/<int:tag_id>/delete", methods=("POST",))
+@login_required
+def delete_tag(tag_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM posts_tags WHERE tag_id = ?", (tag_id,))
+    conn.execute("DELETE FROM tags WHERE tag_id = ?", (tag_id,))
+    conn.commit()
+    conn.close()
+    flash("Tag deleted.")
+    return redirect(url_for("tags_page"))
+
+
+@app.route("/tags/cleanup", methods=("POST",))
+@login_required
+def cleanup_tags():
+    conn = get_db_connection()
+    cur = conn.execute(
+        "DELETE FROM posts_tags WHERE post_id NOT IN (SELECT id FROM posts)"
+    )
+    orphaned_links = cur.rowcount
+    cur = conn.execute(
+        "DELETE FROM tags WHERE tag_id NOT IN (SELECT tag_id FROM posts_tags)"
+    )
+    deleted_tags = cur.rowcount
+    conn.commit()
+    conn.close()
+    if deleted_tags or orphaned_links:
+        flash(
+            f"Cleaned up {deleted_tags} unused tag(s) and {orphaned_links} orphaned link(s)."
+        )
+    else:
+        flash("Nothing to clean up.")
+    return redirect(url_for("tags_page"))
+
+
 @app.route("/about")
 def about_page():
     return render_template("about.j2")
