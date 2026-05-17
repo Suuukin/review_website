@@ -8,6 +8,7 @@
 <h1 class="mb-4">Create a New Post</h1>
 
 <form method="post" id="create-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <!-- Post Type Selector -->
     <div class="mb-4">
         <label class="form-label">Post Type</label>

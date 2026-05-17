@@ -10,6 +10,7 @@ from flask import (
     session,
     jsonify,
 )
+from flask_wtf.csrf import CSRFProtect
 import sqlite3
 from werkzeug.exceptions import abort
 import re
@@ -52,6 +53,10 @@ if PRODUCTION:
     app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix="/game-reviews")
 else:
     app.config["SECRET_KEY"] = "example"
+
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["WTF_CSRF_TIME_LIMIT"] = None  # token lasts as long as the session
+csrf = CSRFProtect(app)
 
 
 def login_required(f):
