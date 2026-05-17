@@ -318,7 +318,7 @@ def tags_page():
     tags = conn.execute(
         """SELECT tags.*, COUNT(posts_tags.post_id) as usage_count
            FROM tags
-           LEFT JOIN posts_tags ON tags.tag_id = posts_tags.post_id
+           LEFT JOIN posts_tags ON tags.tag_id = posts_tags.tag_id
            GROUP BY tags.tag_id
            ORDER BY usage_count DESC, tags.title ASC"""
     ).fetchall()
