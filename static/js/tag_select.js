@@ -63,6 +63,7 @@ function updateNewTagsHidden() {
 }
 
 const tagSelect = new TomSelect('#tags-input', {
+    plugins: ['remove_button'],
     valueField: 'tag_id',
     labelField: 'title',
     searchField: 'title',
