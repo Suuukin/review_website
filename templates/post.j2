@@ -9,7 +9,7 @@
         {% else %}
         <img class="store_image" src="{{ url_for('static', filename='images/store.svg') }}" alt="Store Link">
         {% endif %}
-        <span class="badge badge-primary">{{ post['created'] }}</span>
+        <span class="text-secondary small">{{ post['created'][:7] }}</span>
         {% if tags %}
         {{ tag_badges(tags) }}
         {% endif %}

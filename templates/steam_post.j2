@@ -13,7 +13,7 @@
                 alt="Steam Store Link"></a>
         <h2 class="text-white">{% block title %} {{ post['title'] }} {% endblock %}</h2>
     </div>
-    <span class="badge badge-primary">{{ post['created'] }}</span>
+    <span class="text-secondary small">{{ post['created'][:7] }}</span>
     <div class="row">
         <div class="col">
             <h3>My Review</h3>

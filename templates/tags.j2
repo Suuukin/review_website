@@ -7,7 +7,7 @@
 <div class="mb-3">
   <form method="post" action="{{ url_for('cleanup_tags') }}" class="d-inline">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-outline-warning btn-sm">🧹 Remove Unused Tags</button>
+    <button type="submit" class="btn btn-outline-warning btn-sm">Remove Unused Tags</button>
   </form>
 </div>
 {% endif %}
@@ -23,19 +23,12 @@
       <span class="ms-1 opacity-75">({{ tag['usage_count'] }})</span>
     </a>
     {% if session.get('logged_in') %}
-    <div class="d-flex gap-1">
       <button type="button" class="btn btn-sm btn-outline-light py-0 px-1"
               data-bs-toggle="modal" data-bs-target="#editTagModal"
               data-tag-id="{{ tag['tag_id'] }}"
               data-tag-title="{{ tag['title'] }}"
               data-tag-color="{{ tag['color'] or '#4a6984' }}"
               title="Edit tag">✏️</button>
-      <form method="post" action="{{ url_for('delete_tag', tag_id=tag['tag_id']) }}" class="d-inline"
-            onsubmit="return confirm('Delete this tag? It will be removed from all posts.');">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="Delete tag">🗑️</button>
-      </form>
-    </div>
     {% endif %}
   </div>
   {% endfor %}
@@ -49,11 +42,11 @@
 <div class="modal fade" id="editTagModal" tabindex="-1" aria-labelledby="editTagModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editTagModalLabel">Edit Tag</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <form method="post" id="edit-tag-form">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editTagModalLabel">Edit Tag</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
         <div class="modal-body">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="tag_id" id="edit-tag-id">
@@ -67,11 +60,16 @@
                    style="width: 60px; height: 38px; padding: 2px;">
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-        </div>
       </form>
+      <div class="modal-footer">
+        <form method="post" id="delete-tag-form" class="me-auto"
+              onsubmit="return confirm('Delete this tag? It will be removed from all posts.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Delete</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" form="edit-tag-form" class="btn btn-primary">Save Changes</button>
+      </div>
     </div>
   </div>
 </div>
@@ -88,6 +86,7 @@
       document.getElementById('edit-tag-title').value = tagTitle;
       document.getElementById('edit-tag-color').value = tagColor;
       document.getElementById('edit-tag-form').action = '/tags/' + tagId + '/edit';
+      document.getElementById('delete-tag-form').action = '/tags/' + tagId + '/delete';
     });
   }
 </script>

@@ -51,17 +51,17 @@
         {{ tag_badges(tags, wrapper_class="", query=request.args.get('q', '')) }}
     {% endif %}
 
-    <span class="edit badge badge-primary float-end">{{ post['created'] }}</span>
-    <span></span>
-
     {% if session.get('logged_in') %}
-        <a href="{{ url_for('edit', id=id, store=post['store']) }}">
-            <span class="badge badge-warning float-end">Edit</span>
-        </a>
-        <form action="{{ url_for('delete', id=id, store=post['store']) }}" method="POST" class="d-inline float-end">
+    <div class="float-end">
+        <span class="text-secondary small">{{ post['created'][:7] }}</span>
+        | <a href="{{ url_for('edit', id=id, store=post['store']) }}" class="badge bg-warning text-dark text-decoration-none">Edit</a>
+        | <form action="{{ url_for('delete', id=id, store=post['store']) }}" method="POST" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="badge badge-danger" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>
+            <button type="submit" class="badge bg-danger border-0" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>
         </form>
+    </div>
+    {% else %}
+    <span class="text-secondary small float-end">{{ post['created'][:7] }}</span>
     {% endif %}
 
     <hr>
