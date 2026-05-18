@@ -16,7 +16,10 @@ from werkzeug.exceptions import abort
 import re
 import json
 import os
+import time
+from datetime import datetime, timezone
 import markdown
+import requests
 
 # flake8: noqa
 
@@ -112,6 +115,164 @@ def render_markdown(text):
     )
 
 
+# In-memory set of app_ids currently being refreshed (avoid duplicate concurrent calls)
+_refreshing = set()
+
+# TTL for Steam data refresh (24 hours in seconds)
+STEAM_REFRESH_TTL = 24 * 60 * 60
+
+
+def refresh_steam_data(app_id):
+    """Fetch fresh Steam API data for a given app_id and update the database."""
+    url = f"https://store.steampowered.com/api/appdetails/?appids={app_id}&cc=CA"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        result = resp.json()
+
+        data = result.get(str(app_id), {}).get("data")
+        if not data:
+            print(f"Steam API returned no data for app_id={app_id}")
+            return
+
+        # Extract fields for dedicated columns
+        name = data.get("name")
+        developers = json.dumps(data.get("developers", []))
+        publishers = json.dumps(data.get("publishers", []))
+
+        recommendations = data.get("recommendations")
+        recommendations_count = (
+            recommendations["total"] if isinstance(recommendations, dict) else None
+        )
+
+        is_free = 1 if data.get("is_free") else 0
+
+        price = data.get("price_overview")
+        if isinstance(price, dict):
+            price_currency = price.get("currency")
+            price_initial = price.get("initial")
+            price_final = price.get("final")
+            price_discount_percent = price.get("discount_percent", 0)
+        else:
+            price_currency = None
+            price_initial = None
+            price_final = None
+            price_discount_percent = 0
+
+        # Fetch review counts from Steam reviews API (different endpoint)
+        reviews_positive = None
+        reviews_negative = None
+        try:
+            reviews_url = f"https://store.steampowered.com/appreviews/{app_id}?json=1&language=all&filter=summary"
+            reviews_resp = requests.get(reviews_url, timeout=10)
+            reviews_resp.raise_for_status()
+            reviews_data = reviews_resp.json()
+            query_summary = reviews_data.get("query_summary", {})
+            if query_summary.get("total_reviews", 0) > 0:
+                reviews_positive = query_summary.get("total_positive", 0)
+                reviews_negative = query_summary.get("total_negative", 0)
+        except requests.RequestException as e:
+            print(f"Steam reviews API error for app_id={app_id}: {e}")
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"Steam reviews data parse error for app_id={app_id}: {e}")
+
+        # Re-serialize full response as extra
+        extra = json.dumps(data)
+
+        # Grab other fields we already store as columns
+        detailed_description = data.get("detailed_description", "")
+        header_image = data.get("header_image", "")
+        background = data.get("background", "")
+        genres = json.dumps(data.get("genres", []))
+
+        conn = get_db_connection()
+        conn.execute(
+            """INSERT OR REPLACE INTO app_info (
+                app_id, name, developers, publishers,
+                recommendations_count, is_free,
+                price_currency, price_initial, price_final,
+                price_discount_percent, price_updated_at,
+                reviews_positive, reviews_negative,
+                extra, detailed_description, header_image,
+                background, genres
+            ) VALUES (
+                ?, ?, ?, ?,
+                ?, ?,
+                ?, ?, ?,
+                ?, CURRENT_TIMESTAMP,
+                ?, ?,
+                ?, ?, ?,
+                ?, ?
+            )""",
+            (
+                app_id,
+                name,
+                developers,
+                publishers,
+                recommendations_count,
+                is_free,
+                price_currency,
+                price_initial,
+                price_final,
+                price_discount_percent,
+                reviews_positive,
+                reviews_negative,
+                extra,
+                detailed_description,
+                header_image,
+                background,
+                genres,
+            ),
+        )
+        conn.commit()
+        conn.close()
+        print(f"Refreshed Steam data for app_id={app_id}")
+
+    except requests.RequestException as e:
+        print(f"Steam API error for app_id={app_id}: {e}")
+    except (KeyError, ValueError, TypeError) as e:
+        print(f"Steam data parse error for app_id={app_id}: {e}")
+
+
+def refresh_if_needed(app_info):
+    """Check if Steam data is stale and trigger a refresh if so.
+    Returns True if a refresh was attempted, False otherwise."""
+    if app_info is None:
+        return False
+
+    app_id = app_info["app_id"]
+
+    # Check if already being refreshed by another request
+    if app_id in _refreshing:
+        print(f"Skipping refresh for app_id={app_id}: already in progress")
+        return False
+
+    # Check staleness
+    try:
+        price_updated = app_info["price_updated_at"]
+    except (KeyError, IndexError):
+        price_updated = None
+    if price_updated is not None:
+        try:
+            # SQLite's CURRENT_TIMESTAMP returns UTC, so compare against UTC now
+            updated = datetime.fromisoformat(price_updated).replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - updated).total_seconds()
+            if age < STEAM_REFRESH_TTL:
+                print(f"Skipping refresh for app_id={app_id}: data is still fresh (age={age:.0f}s)")
+                return False  # still fresh
+        except (ValueError, TypeError):
+            pass  # couldn't parse timestamp, treat as stale
+
+    # Trigger refresh
+    print(f"Triggering refresh for app_id={app_id}")
+    _refreshing.add(app_id)
+    try:
+        refresh_steam_data(app_id)
+        return True
+    finally:
+        _refreshing.discard(app_id)
+
+
 def parse_search_query(query):
     """Parse a search query into a list of (token, is_quoted) tuples."""
     results = []
@@ -192,6 +353,17 @@ def post(post_id, store):
     post, app_info = get_post(post_id, store)
     post_content = render_markdown(post["content"])
 
+    # Refresh Steam data if stale
+    if store == "steam" and app_info is not None:
+        refreshed = refresh_if_needed(app_info)
+        if refreshed:
+            # Re-fetch app_info to get fresh data
+            conn = get_db_connection()
+            app_info = conn.execute(
+                "SELECT * FROM app_info WHERE app_id = ?", (post_id,)
+            ).fetchone()
+            conn.close()
+
     conn = get_db_connection()
     tags = conn.execute(
         "SELECT tags.title, tags.color FROM posts_tags JOIN tags ON posts_tags.tag_id = tags.tag_id WHERE posts_tags.post_id = ?",
@@ -213,6 +385,7 @@ def post(post_id, store):
             bg_img=bg_img,
             desc=desc,
             tags=tags,
+            app_info=app_info,
         )
     else:
         store_url = None
@@ -273,7 +446,9 @@ def index():
 
     if tokens:
         sql = f"""
-            SELECT posts.*, app_info.extra
+            SELECT posts.*, app_info.extra, app_info.is_free, app_info.price_currency, app_info.price_final,
+                   app_info.price_initial, app_info.price_discount_percent,
+                   app_info.reviews_positive, app_info.reviews_negative
             FROM posts
             LEFT JOIN app_info ON posts.app_id = app_info.app_id
             WHERE {where_clause}
@@ -283,7 +458,9 @@ def index():
         post_sql = conn.execute(sql, params + [per_page, offset]).fetchall()
     else:
         post_sql = conn.execute(
-            "SELECT posts.*, app_info.extra FROM posts "
+            "SELECT posts.*, app_info.extra, app_info.is_free, app_info.price_currency, app_info.price_final, "
+            "app_info.price_initial, app_info.price_discount_percent, "
+            "app_info.reviews_positive, app_info.reviews_negative FROM posts "
             "LEFT JOIN app_info ON posts.app_id = app_info.app_id "
             "ORDER BY posts.created DESC LIMIT ? OFFSET ?",
             (per_page, offset),
@@ -295,6 +472,12 @@ def index():
         if row["extra"]:
             post["extra"] = json.loads(post["extra"])
             post["genres"] = [g["description"] for g in post["extra"].get("genres", [])]
+            rd = post["extra"].get("release_date", {})
+            post["coming_soon"] = rd.get("coming_soon", False)
+            post["release_date"] = rd.get("date", "")
+        else:
+            post["coming_soon"] = False
+            post["release_date"] = ""
 
         post_id = post["id"]
         tags = conn.execute(
@@ -447,6 +630,15 @@ def create():
             if existing:
                 flash(f'A review for "{title}" already exists. Each game can only have one review.')
                 return render_template("create.j2")
+
+            # Fetch Steam API data for games not yet in app_info
+            conn = get_db_connection()
+            has_app_info = conn.execute(
+                "SELECT 1 FROM app_info WHERE app_id = ?", (app_id,)
+            ).fetchone()
+            conn.close()
+            if not has_app_info:
+                refresh_steam_data(int(app_id))
 
         if not title:
             flash("Title is required")
@@ -673,6 +865,29 @@ def delete(store, id):
     conn.close()
     flash('"{}" was successfully deleted!'.format(post["title"]))
     return redirect(url_for("index"))
+
+
+# ─── Template Filters ───
+
+
+@app.template_filter("fromjson")
+def fromjson_filter(value):
+    """Parse a JSON string into a Python object (for use in templates)."""
+    if value is None:
+        return None
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+@app.template_filter("format_price")
+def format_price_filter(cents, currency="CDN$"):
+    """Format a price in cents to a human-readable string."""
+    if cents is None:
+        return None
+    dollars = cents / 100
+    return f"{currency} {dollars:,.2f}"
 
 
 if __name__ == "__main__":

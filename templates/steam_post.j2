@@ -22,9 +22,46 @@
             {% endif %}
             <p>{{ post_content|safe }}</p>
         </div>
-        <div class="col d-flex flex-wrap align-items-center">
-            <a href="{{store_url}}"><img class="capsule_image border border-primary" src="{{image}}"
-                    alt="Game Image"></a>
+        <div class="col d-flex flex-wrap align-items-start">
+            <div class="text-center">
+                <a href="{{store_url}}"><img class="capsule_image border border-primary" src="{{image}}"
+                        alt="Game Image"></a>
+                {% set devs = app_info['developers'] | fromjson %}
+                {% set pubs = app_info['publishers'] | fromjson %}
+                {% if devs %}
+                <div class="text-secondary small mt-2">Developer: {{ devs | join(", ") }}</div>
+                {% endif %}
+                {% if pubs %}
+                <div class="text-secondary small">Publisher: {{ pubs | join(", ") }}</div>
+                {% endif %}
+                <hr class="my-2" style="width:60%; margin: 0 auto;">
+                {% if app_info['is_free'] == 1 %}
+                <div class="steam-price mt-1 fw-bold text-success">Free to Play</div>
+                {% elif app_info['price_final'] is not none %}
+                    {% if app_info['price_discount_percent'] > 0 %}
+                    <div class="mt-1">
+                        <span class="steam-price-original text-decoration-line-through">{{ app_info['price_initial'] | format_price(app_info['price_currency'] or "CDN$") }}</span>
+                        <span class="steam-price-discounted fw-bold text-success ms-1">{{ app_info['price_final'] | format_price(app_info['price_currency'] or "CDN$") }}</span>
+                        <span class="badge bg-warning text-dark ms-1">-{{ app_info['price_discount_percent'] }}%</span>
+                    </div>
+                    {% else %}
+                    <div class="steam-price mt-1 fw-bold">{{ app_info['price_final'] | format_price(app_info['price_currency'] or "CDN$") }}</div>
+                    {% endif %}
+                {% endif %}
+                {% if app_info['reviews_positive'] is not none and app_info['reviews_negative'] is not none %}
+                <div class="text-secondary small mt-1">
+                    {% set total = app_info['reviews_positive'] + app_info['reviews_negative'] %}
+                    {% set pct = (app_info['reviews_positive'] / total * 100) | round(0) | int %}
+                    <span class="text-success fw-semibold">{{ '{:,}'.format(app_info['reviews_positive']) }} positive</span>
+                    <span class="text-secondary">/ {{ '{:,}'.format(app_info['reviews_negative']) }} negative</span>
+                    <span class="ms-1">({{ pct }}%)</span>
+                </div>
+                {% elif app_info['recommendations_count'] is not none %}
+                <div class="text-secondary small mt-1">
+                    {{ '{:,}'.format(app_info['recommendations_count']) }} reviews
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
     <hr class="p-3">

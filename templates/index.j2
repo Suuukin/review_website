@@ -33,18 +33,79 @@
     {% endif %}
     {% set tags = post["tags"] %}
 
-    <div>
-        <a href=" {{url_for('post', post_id=id, store=post['store'])}}"><img
-            src="{{image}}" alt="Game Image"></a>
-        <a href=" {{url_for('post', post_id=id, store=post['store'])}}"><h2 
-            class="p-2" style="display: inline-block">{{ post['title'] | highlight(request.args.get('q', '')) }}</h2></a>
-    </div>
+    {% if post["store"] == "steam" %}
+    {% set reviews_pos = post.get("reviews_positive") %}
+    {% set reviews_neg = post.get("reviews_negative") %}
+    <div class="mb-2">
+      <div class="d-flex gap-3 align-items-start">
+        {# Image on the left #}
+        <div class="flex-shrink-0">
+            <a href="{{ url_for('post', post_id=id, store=post['store']) }}">
+                <img src="{{image}}" alt="Game Image" style="width:230px; height:auto;" class="border border-primary rounded">
+            </a>
+        </div>
+        {# Title beside the image #}
+        <div class="flex-grow-1">
+            <a href="{{ url_for('post', post_id=id, store=post['store']) }}">
+                <h2 class="p-2" style="display: inline-block">{{ post['title'] | highlight(request.args.get('q', '')) }}</h2>
+            </a>
+        </div>
+        {# Price, reviews, date, buttons right-aligned #}
+        <div class="flex-shrink-0 text-end">
+            {% if post.get("is_free") == 1 %}
+            <div class="steam-price fw-bold text-success">Free to Play</div>
+            {% elif post.get("price_final") is not none %}
+                {% if post.get("price_discount_percent", 0) > 0 %}
+                <div class="steam-price fw-bold text-success">{{ post["price_final"] | format_price(post["price_currency"] or "CDN$") }}
+                    <span class="steam-price-original text-decoration-line-through ms-1">{{ post["price_initial"] | format_price(post["price_currency"] or "CDN$") }}</span>
+                    <span class="badge bg-warning text-dark ms-1">-{{ post["price_discount_percent"] }}%</span>
+                </div>
+                {% else %}
+                <div class="steam-price fw-bold text-success">{{ post["price_final"] | format_price(post["price_currency"] or "CDN$") }}</div>
+                {% endif %}
+            {% elif post.get("coming_soon") %}
+            <div class="steam-price-original fw-semibold">Coming soon</div>
+            {% endif %}
 
-    {% if genres != None %}
-        {% for description in genres %}
-            <span class="badge badge-secondary">{{ description | highlight(request.args.get('q', '')) }}</span>
-        {% endfor %}
-    {% endif %}
+            {% if reviews_pos is not none and reviews_neg is not none %}
+            <div class="text-secondary small mt-1">
+                {% set total = reviews_pos + reviews_neg %}
+                {% set pct = (reviews_pos / total * 100) | round(0) | int %}
+                <span class="text-success fw-semibold">{{ '{:,}'.format(reviews_pos) }} positive ({{ pct }}%)</span>
+            </div>
+            {% endif %}
+
+            <div class="mt-2">
+                {% if session.get('logged_in') %}
+                <a href="{{ url_for('edit', id=id, store=post['store']) }}" class="badge bg-warning text-dark text-decoration-none">Edit</a>
+                <form action="{{ url_for('delete', id=id, store=post['store']) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="badge bg-danger border-0" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+      </div>
+      {# Badges beneath the picture, with date inline #}
+      <div class="mt-1 d-flex align-items-center gap-1 flex-wrap">
+        {% if genres %}
+            {% for description in genres %}
+                <span class="badge badge-secondary">{{ description | highlight(request.args.get('q', '')) }}</span>
+            {% endfor %}
+        {% endif %}
+        {% if tags %}
+            {% if genres %}<div class="vr mx-1"></div>{% endif %}
+            {{ tag_badges(tags, wrapper_class="", query=request.args.get('q', '')) }}
+        {% endif %}
+        <span class="text-secondary small ms-auto">{{ post['created'][:7] }}</span>
+      </div>
+    </div>
+    {% else %}
+    {# Non-Steam post layout #}
+    <div>
+        <a href="{{ url_for('post', post_id=id, store=post['store']) }}"><img src="{{image}}" alt="Game Image"></a>
+        <a href="{{ url_for('post', post_id=id, store=post['store']) }}"><h2 class="p-2" style="display: inline-block">{{ post['title'] | highlight(request.args.get('q', '')) }}</h2></a>
+    </div>
 
     {% if tags %}
         <div class="vr"></div>
@@ -62,6 +123,7 @@
     </div>
     {% else %}
     <span class="text-secondary small float-end">{{ post['created'][:7] }}</span>
+    {% endif %}
     {% endif %}
 
     <hr>

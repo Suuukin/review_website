@@ -54,6 +54,20 @@ a:active {
     background-color: #1b2838;
 }
 
+.steam-price {
+    font-size: 1.3rem;
+    color: #66c0f4;
+}
+
+.steam-price-discounted {
+    font-size: 1.3rem;
+}
+
+.steam-price-original {
+    font-size: 0.95rem;
+    color: #738895;
+}
+
 .steam_description img {
     display: block;
     margin-left: auto;
