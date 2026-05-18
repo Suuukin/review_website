@@ -34,3 +34,10 @@ CREATE TABLE posts_tags (
     post_id INTEGER NOT NULL,
     tag_id INTEGER NOT NULL
 );
+
+DROP TABLE IF EXISTS steam_apps;
+
+CREATE TABLE steam_apps (
+    app_id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL
+);

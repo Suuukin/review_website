@@ -5,6 +5,8 @@ const gameSearch = new TomSelect('#game-search', {
     valueField: 'app_id',
     labelField: 'name',
     searchField: 'name',
+    maxItems: 1,
+    closeAfterSelect: true,
     maxOptions: 20,
     placeholder: 'Search for a Steam game…',
     loadThrottle: 300,
@@ -46,7 +48,15 @@ const gameSearch = new TomSelect('#game-search', {
             document.getElementById('app_id').value = value;
             document.getElementById('store').value = 'steam';
             document.getElementById('selected-game-name').textContent = g.name;
-            document.getElementById('selected-game-image').src = g.header_image;
+            document.getElementById('title').value = g.name;
+            var imgEl = document.getElementById('selected-game-image');
+            if (g.header_image) {
+                imgEl.src = g.header_image;
+                imgEl.classList.remove('d-none');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('d-none');
+            }
             document.getElementById('selected-game-appid').textContent = value;
             document.getElementById('game-selected').classList.remove('d-none');
         }

@@ -429,6 +429,13 @@ def create():
             if app_info:
                 extra = json.loads(app_info["extra"])
                 title = extra.get("name", "Unknown")
+            else:
+                # Fallback to the full Steam app list
+                row = conn.execute(
+                    "SELECT name FROM steam_apps WHERE app_id = ?", (app_id,)
+                ).fetchone()
+                if row:
+                    title = row["name"]
             conn.close()
 
             # Check if this game already has a review
@@ -488,26 +495,82 @@ def api_games_search():
         return jsonify([])
 
     conn = get_db_connection()
-    rows = conn.execute(
-        """SELECT a.app_id, a.header_image, a.extra,
-                  CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END as has_review
-           FROM app_info a
-           LEFT JOIN posts p ON p.app_id = a.app_id AND p.store = 'steam'
-           WHERE json_extract(a.extra, '$.name') LIKE ?
-           ORDER BY has_review, a.app_id
-           LIMIT 20""",
-        (f"%{q}%",),
-    ).fetchall()
-    conn.close()
-
+    escaped_q = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     results = []
-    for row in rows:
-        extra = json.loads(row["extra"])
+
+    # Word-boundary patterns: match at start of name or after space/colon/hyphen/slash
+    wb_patterns = [
+        f"{escaped_q}%",           # start of string
+        f"% {escaped_q}%",         # after space
+        f"%:{escaped_q}%",         # after colon
+        f"%-{escaped_q}%",         # after hyphen
+        f"%/{escaped_q}%",         # after slash
+    ]
+
+    def wb_where(col):
+        return " OR ".join(f"{col} LIKE ? ESCAPE '\\'" for _ in wb_patterns)
+
+    # 1. Rich results from app_info (have header_image, capsule_image, etc.)
+    rich_query = f"""
+        SELECT a.app_id, a.header_image, a.extra, game_name,
+               CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END as has_review
+        FROM (
+            SELECT *, json_extract(a.extra, '$.name') as game_name
+            FROM app_info a
+        ) a
+        LEFT JOIN posts p ON p.app_id = a.app_id AND p.store = 'steam'
+        WHERE ({wb_where('a.game_name')})
+        ORDER BY has_review DESC, a.app_id
+    """
+    rich_rows = conn.execute(rich_query, wb_patterns).fetchall()
+
+    rich_ids = set()
+    for row in rich_rows:
         results.append({
             "app_id": row["app_id"],
-            "name": extra.get("name", "Unknown"),
+            "name": row["game_name"],
             "header_image": row["header_image"],
-            "capsule_image": extra.get("capsule_image", ""),
+            "capsule_image": json.loads(row["extra"]).get("capsule_image", ""),
+            "has_review": bool(row["has_review"]),
+        })
+        rich_ids.add(row["app_id"])
+
+    # 2. Basic results from steam_apps (exclude games already in app_info)
+    basic_where = wb_where("s.name")
+    if rich_ids:
+        placeholders = ",".join("?" for _ in rich_ids)
+        basic_query = f"""
+            SELECT s.app_id, s.name,
+                   CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END as has_review
+            FROM steam_apps s
+            LEFT JOIN posts p ON p.app_id = s.app_id AND p.store = 'steam'
+            WHERE ({basic_where})
+              AND s.app_id NOT IN ({placeholders})
+            ORDER BY s.name
+            LIMIT ?
+        """
+        basic_params = wb_patterns + list(rich_ids) + [max(0, 20 - len(results))]
+    else:
+        basic_query = f"""
+            SELECT s.app_id, s.name,
+                   CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END as has_review
+            FROM steam_apps s
+            LEFT JOIN posts p ON p.app_id = s.app_id AND p.store = 'steam'
+            WHERE ({basic_where})
+            ORDER BY s.name
+            LIMIT 20
+        """
+        basic_params = wb_patterns
+
+    basic_rows = conn.execute(basic_query, basic_params).fetchall()
+    conn.close()
+
+    for row in basic_rows:
+        results.append({
+            "app_id": row["app_id"],
+            "name": row["name"],
+            "header_image": None,
+            "capsule_image": None,
             "has_review": bool(row["has_review"]),
         })
 
