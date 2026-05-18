@@ -20,11 +20,11 @@ A Flask web application for publishing game reviews. Content is pulled from YAML
 | File | Purpose |
 |------|---------|
 | `review_website.py` | Main Flask app — routes, auth, DB helpers, PrefixMiddleware |
-| `schema.sql` | Database schema (posts, app_info, tags, posts_tags) |
-| `init_db.py` | Initialize DB from `schema.sql` and seed a test post |
-| `fill_db_posts.py` | Populate posts from `reviews.yaml` |
-| `fill_db_app_info.py` | Populate app_info from Steam API data |
-| `upgrade_db_tags.py` | Database migration for adding tags support |
+| `migration/schema.sql` | Database schema (posts, app_info, tags, posts_tags) |
+| `migration/init_db.py` | Initialize DB from `schema.sql` and seed a test post |
+| `migration/fill_db_posts.py` | Populate posts from `reviews.yaml` |
+| `migration/fill_db_app_info.py` | Populate app_info from Steam API data |
+| `migration/upgrade_db_tags.py` | Database migration for adding tags support |
 | `fetch_appid.py` | Utility to fetch Steam app IDs |
 | `steam_data_collector.py` | Collects Steam API data |
 | `reviews.yaml` / `reviews2.yaml` | Source data for reviews (YAML format) |
@@ -35,7 +35,22 @@ A Flask web application for publishing game reviews. Content is pulled from YAML
 ```
 review_website/
 ├── review_website.py            # Main app
-├── schema.sql                   # DB schema
+├── migration/                   # Database migrations, schema, and seed scripts
+│   ├── schema.sql               # DB schema
+│   ├── init_db.py               # Initialize DB from schema.sql
+│   ├── fill_db_posts.py         # Populate posts from reviews.yaml
+│   ├── fill_db_app_info.py      # Populate app_info from Steam API
+│   ├── upgrade_db_tags.py       # Tags migration
+│   ├── migrate_db_tags.py       # Additional tags migration
+│   └── upgrade_db_unique_game_reviews.py  # Game reviews migration
+├── plans/                       # Planning documents
+│   ├── create_game_search_enhancement.md
+│   ├── feature_improvement.md
+│   ├── login_link_plan.md
+│   ├── new_post_enhance.md
+│   ├── post_search_plan.md
+│   ├── search_bar.md
+│   └── stage2_implementation_plan.md
 ├── database.db                  # SQLite database
 ├── database_backup.db           # Backup copy of the database
 ├── templates/                   # Jinja2 templates (.j2)
@@ -145,7 +160,8 @@ PRODUCTION=1 AUTH_USER=xxx AUTH_PASS=xxx SECRET_KEY=xxx waitress-serve --call re
 ### Using `uv`
 Use the `uv` skill for all Python-related tasks. Instead of `pip`, `python`, or `venv`:
 
-- **Run scripts:** `uv run script.py` (e.g., `uv run init_db.py`, `uv run fill_db_posts.py`)
+- **Run scripts:** `uv run script.py` (e.g., `uv run migration/init_db.py`, `uv run migration/fill_db_posts.py`)
+- **Migration scripts:** Database scripts are in `migration/` — run them from the project root (e.g., `uv run migration/upgrade_db_tags.py`)
 - **Add dependencies:** `uv add <package>` (updates `requirements.txt` or `pyproject.toml`)
 - **One-off deps:** `uv run --with requests script.py`
 
